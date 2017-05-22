@@ -1,10 +1,20 @@
 use std::time;
 use std::fmt;
 use std::ops;
+use std::convert;
+
+use chrono;
+
+use super::error;
+use super::error::DurationError;
 
 pub const SECS_PER_DAY: f64 = 60.0*60.0*24.0;
 pub const SECS_PER_HOUR: f64 = 60.0*60.0;
 pub const SECS_PER_MINUTE: f64 = 60.0;
+
+pub trait TimePoint<Rhs=Self> {
+    fn duration_between(&self, rhs: &Rhs) -> FloatDuration;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct FloatDuration {
@@ -105,14 +115,14 @@ impl FloatDuration {
         self.secs.is_sign_negative()
     }
 
-    pub fn as_std(&self) -> Option<time::Duration> {
+    pub fn as_std(&self) -> error::Result<time::Duration> {
         if self.secs.is_sign_negative() {
-            None
+            Err(DurationError::StdOutOfRange)
         } else {
             let seconds = self.secs.trunc();
             let nanos = self.secs.fract() * 1e9;
 
-            Some(time::Duration::new(seconds as u64, nanos as u32))
+            Ok(time::Duration::new(seconds as u64, nanos as u32))
         }
     }
 
@@ -131,6 +141,13 @@ impl FloatDuration {
         FloatDuration {
             secs: seconds
         }
+    }
+}
+
+impl FloatDuration {
+    pub fn as_chrono_duration(&self) -> error::Result<chrono::Duration> {
+        let std_duration = self.as_std()?;
+        chrono::Duration::from_std(std_duration).map_err(|e| convert::From::from(e))
     }
 }
 
@@ -172,8 +189,21 @@ impl fmt::Display for DecomposedTime {
 
 impl fmt::Display for FloatDuration {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let decomposed_time = self.decompose();
-        write!(fmt, "{}", decomposed_time)
+        if self.secs > SECS_PER_DAY {
+            write!(fmt, "{} days", self.as_days())
+        } else if self.secs > SECS_PER_HOUR {
+            write!(fmt, "{} hours", self.as_hours())
+        } else if self.secs > SECS_PER_MINUTE {
+            write!(fmt, "{} minutes", self.as_minutes())
+        } else if self.secs > 1.0 {
+            write!(fmt, "{} seconds", self.as_seconds())
+        } else if self.secs > 1.0e-3 {
+            write!(fmt, "{} milliseconds", self.as_milliseconds())
+        } else if self.secs > 1.0e-6 {
+            write!(fmt, "{} microseconds", self.as_microseconds())
+        } else {
+            write!(fmt, "{} nanoseconds", self.as_nanoseconds())
+        }
     }
 }
 
@@ -296,9 +326,10 @@ mod tests {
         
         let duration2 = FloatDuration::hours(-2.0);
         assert!(duration2.is_negative());
-        assert_eq!(duration2.as_std(), None);
+        assert!(!duration2.as_std().is_ok());
         let std_duration2 = (-duration2).as_std().unwrap();
         assert_eq!(std_duration2, time::Duration::new(3600*2, 0));
         assert_eq!(FloatDuration::from_std(std_duration2), -duration2);
     }
 }
+
