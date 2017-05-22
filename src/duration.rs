@@ -135,6 +135,11 @@ impl FloatDuration {
 }
 
 impl DecomposedTime {
+    pub fn new() -> DecomposedTime {
+        DecomposedTime { days: 0, hours: 0, minutes: 0, seconds: 0,
+            fractional_seconds: 0.0, sign: 1 }
+    }
+
     pub fn from_components(days: u32, hours: u32, minutes: u32, 
                seconds: u32, fractional_seconds: f64) -> DecomposedTime 
     {
@@ -148,22 +153,27 @@ impl DecomposedTime {
     }
 }
 
-impl fmt::Display for FloatDuration {
+impl fmt::Display for DecomposedTime {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let decompose_time = self.decompose();
-
-        if decompose_time.days > 0 {
-            write!(fmt, "{}d ", decompose_time.days as u64)?;
+        if self.days > 0 {
+            write!(fmt, "{}d ", self.days as u64)?;
         }
 
-        if decompose_time.sign.is_negative() {
+        if self.sign.is_negative() {
             write!(fmt, "-")?;
         }
         write!(fmt, "{:02}:{:02}:{:02}.{}", 
-            decompose_time.hours,
-            decompose_time.minutes,
-            decompose_time.seconds,
-            decompose_time.fractional_seconds)
+            self.hours,
+            self.minutes,
+            self.seconds,
+            self.fractional_seconds)
+    }
+}
+
+impl fmt::Display for FloatDuration {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let decomposed_time = self.decompose();
+        write!(fmt, "{}", decomposed_time)
     }
 }
 
