@@ -66,7 +66,7 @@ impl FloatDuration {
         let hours = (secs_left / SECS_PER_HOUR).trunc();
         secs_left -= hours*SECS_PER_HOUR;
         let minutes = (secs_left / SECS_PER_MINUTE).trunc();
-        secs_left -= hours*SECS_PER_MINUTE;
+        secs_left -= minutes*SECS_PER_MINUTE;
         let seconds = secs_left.trunc();
         let fract = secs_left.fract();
 
@@ -126,9 +126,9 @@ impl FloatDuration {
         }
     }
 
-    pub fn from_std(duration: time::Duration) -> FloatDuration {
-        return FloatDuration::seconds(
-            (duration.as_secs() as f64) + (duration.subsec_nanos() as f64)*1.0e-9);
+    pub fn from_std(duration: time::Duration) -> error::Result<FloatDuration> {
+        Ok(FloatDuration::seconds(
+            (duration.as_secs() as f64) + (duration.subsec_nanos() as f64)*1.0e-9))
     }
 
     pub fn from_decomposed(decomposed: &DecomposedTime) -> FloatDuration {
@@ -148,6 +148,13 @@ impl FloatDuration {
     pub fn as_chrono_duration(&self) -> error::Result<chrono::Duration> {
         let std_duration = self.as_std()?;
         chrono::Duration::from_std(std_duration).map_err(|e| convert::From::from(e))
+    }
+    
+    pub fn from_chrono_duration(duration: &chrono::Duration) 
+            -> error::Result<FloatDuration> 
+    {
+        let std_duration = duration.to_std()?;
+        FloatDuration::from_std(std_duration)
     }
 }
 
@@ -322,14 +329,37 @@ mod tests {
         let std_duration1 = duration1.as_std().unwrap();
         assert!(duration1.is_positive());
         assert_eq!(std_duration1, time::Duration::new(300, 0));
-        assert_eq!(FloatDuration::from_std(std_duration1), duration1);
+        assert_eq!(FloatDuration::from_std(std_duration1).unwrap(), duration1);
         
         let duration2 = FloatDuration::hours(-2.0);
         assert!(duration2.is_negative());
         assert!(!duration2.as_std().is_ok());
         let std_duration2 = (-duration2).as_std().unwrap();
         assert_eq!(std_duration2, time::Duration::new(3600*2, 0));
-        assert_eq!(FloatDuration::from_std(std_duration2), -duration2);
+        assert_eq!(FloatDuration::from_std(std_duration2).unwrap(), -duration2);
+    }
+
+    #[test]
+    fn test_display() {
+        use std::fmt::Write;
+
+        let mut buffer1 = "".to_string();
+        let mut buffer1_2 = "".to_string();
+        let duration1 = FloatDuration::minutes(3.5);
+        
+        write!(buffer1, "{}", duration1);
+        write!(buffer1_2, "{}", duration1.decompose());
+        assert_eq!(buffer1, "3.5 minutes");
+        assert_eq!(buffer1_2, "00:03:30.0");
+
+        let mut buffer2 = "".to_string();
+        let mut buffer2_2 = "".to_string();
+        let duration2 = FloatDuration::days(3.0) + FloatDuration::hours(12.0);
+
+        write!(buffer2, "{}", duration2);
+        write!(buffer2_2, "{}", duration2.decompose());
+        assert_eq!(buffer2, "3.5 days");
+        assert_eq!(buffer2_2, "3d 12:00:00.0");
     }
 }
 
