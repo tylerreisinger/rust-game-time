@@ -27,12 +27,17 @@ impl<S: FrameRateSampler> FrameCounter<S> {
         self.slow_threshold
     }
 
+    pub fn set_target_frame_rate(&mut self, val: f64) -> &mut FrameCounter<S> {
+        self.target_frame_rate = val;
+        self
+    }
     pub fn target_frame_rate(&self) -> f64 {
         self.target_frame_rate
     }
     pub fn target_time_per_frame(&self) -> FloatDuration {
         FloatDuration::seconds(1.0) / self.target_frame_rate
     }
+
     pub fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
         self.target_time_per_frame() - time.elapsed_time_since_frame_start() 
     }

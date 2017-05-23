@@ -57,6 +57,10 @@ impl GameClock {
         self.clock_multiplier = val;
         self
     }
+    pub fn with_clock_multiplier(mut self, val: f64) -> GameClock {
+        self.clock_multiplier = val;
+        self
+    }
 
     pub fn tick(&mut self) -> GameTime {
         let now = chrono::Local::now();
@@ -147,5 +151,13 @@ mod tests {
         assert_eq!(game_time1.frame_number(), 1);
         assert_eq!(game_time1.total_game_time(), game_time1.elapsed_game_time());
 
+    }
+
+    #[test]
+    fn test_clock_multiplier() {
+        let mut clock1 = GameClock::new().with_clock_multiplier(2.0);
+        let game_time1 = clock1.tick();
+        assert_eq!(clock1.clock_multiplier(), 2.0);
+        assert_eq!(game_time1.elapsed_wall_time()*2.0, game_time1.elapsed_game_time());
     }
 }
