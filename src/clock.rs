@@ -3,6 +3,7 @@ use chrono;
 use super::duration::{FloatDuration, TimePoint};
 
 pub struct GameTime {
+    frame_start: chrono::DateTime<chrono::Local>,
     wall_time_elapsed: FloatDuration,
     game_time_elapsed: FloatDuration,
     game_time_total: FloatDuration,
@@ -21,9 +22,10 @@ pub struct GameClock {
 
 impl GameClock {
     pub fn new() -> GameClock {
+        let now = chrono::Local::now();
         GameClock {
-            wall_start_global: chrono::Local::now(),
-            wall_start_frame: chrono::Local::now(),
+            wall_start_global: now,
+            wall_start_frame: now,
             game_start_frame: FloatDuration::milliseconds(0.0),
             game_time_elapsed: FloatDuration::milliseconds(0.0),
             wall_time_elapsed: FloatDuration::milliseconds(0.0),
@@ -71,6 +73,7 @@ impl GameClock {
         self.wall_start_frame = now;
          
         GameTime {
+            frame_start: now,
             wall_time_elapsed: time_elapsed,
             game_time_elapsed,
             game_time_total: cur_game_time,
@@ -80,6 +83,12 @@ impl GameClock {
 }
 
 impl GameTime {
+    pub fn frame_start_time(&self) -> chrono::DateTime<chrono::Local> {
+        self.frame_start
+    }
+    pub fn elapsed_frame_time(&self) -> FloatDuration {
+        chrono::Local::now().float_duration_since(self.frame_start).unwrap()
+    }
     pub fn elapsed_wall_time(&self) -> FloatDuration {
         self.wall_time_elapsed
     }
