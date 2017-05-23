@@ -1,7 +1,6 @@
 use std::time;
 use std::fmt;
 use std::ops;
-use std::convert;
 use std::f64;
 
 use chrono;
@@ -14,7 +13,7 @@ pub const SECS_PER_HOUR: f64 = 60.0*60.0;
 pub const SECS_PER_MINUTE: f64 = 60.0;
 
 pub trait TimePoint<Rhs=Self> {
-    fn duration_between(&self, rhs: &Rhs) -> FloatDuration;
+    fn float_duration_since(self, rhs: Rhs) -> error::Result<FloatDuration>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -103,6 +102,9 @@ impl FloatDuration {
         self.secs * 1.0e9
     }
 
+    pub fn abs(self) -> FloatDuration {
+        FloatDuration { secs: self.secs.abs() }
+    }
     pub fn zero() -> FloatDuration {
         FloatDuration {secs: 0.0}
     }
@@ -154,15 +156,34 @@ impl FloatDuration {
 
 impl FloatDuration {
     pub fn as_chrono_duration(&self) -> error::Result<chrono::Duration> {
-        let std_duration = self.as_std()?;
-        chrono::Duration::from_std(std_duration).map_err(|e| convert::From::from(e))
+        let is_negative = self.is_negative();
+        let std_duration = self.abs().as_std()?;
+        let chrono_duration = chrono::Duration::from_std(std_duration)?;
+        if is_negative {
+            Ok(-chrono_duration)
+        } else {
+            Ok(chrono_duration)
+        }
     }
     
     pub fn from_chrono_duration(duration: &chrono::Duration) 
             -> error::Result<FloatDuration> 
     {
-        let std_duration = duration.to_std()?;
-        FloatDuration::from_std(std_duration)
+        let is_negative = duration.num_seconds() < 0;        
+
+        let std_duration =
+            if is_negative {
+                (-*duration).to_std()?
+            } else {
+                duration.to_std()?
+            };
+
+        let float_duration = FloatDuration::from_std(std_duration)?;
+        if is_negative {
+            Ok(-float_duration)
+        } else {
+            Ok(float_duration)
+        }
     }
 }
 
@@ -182,6 +203,27 @@ impl DecomposedTime {
     pub fn negate(mut self) -> DecomposedTime {
         self.sign *= -1;
         self
+    }
+}
+
+impl<Tz: chrono::TimeZone> TimePoint for chrono::DateTime<Tz> {
+    fn float_duration_since(self, since: chrono::DateTime<Tz>) 
+            -> error::Result<FloatDuration> 
+    {
+        let chrono_duration = self.signed_duration_since(since);
+        FloatDuration::from_chrono_duration(&chrono_duration)
+    }
+}
+impl TimePoint for time::Instant {
+    fn float_duration_since(self, since: time::Instant) -> error::Result<FloatDuration> {
+        let std_duration = self.duration_since(since);
+        FloatDuration::from_std(std_duration)
+    }
+}
+impl TimePoint for time::SystemTime {
+    fn float_duration_since(self, since: time::SystemTime) -> error::Result<FloatDuration> {
+        let std_duration = self.duration_since(since)?;
+        FloatDuration::from_std(std_duration)
     }
 }
 
