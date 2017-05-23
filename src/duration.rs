@@ -2,6 +2,7 @@ use std::time;
 use std::fmt;
 use std::ops;
 use std::convert;
+use std::f64;
 
 use chrono;
 
@@ -113,6 +114,13 @@ impl FloatDuration {
     }
     pub fn is_negative(&self) -> bool {
         self.secs.is_sign_negative()
+    }
+
+    pub fn min_value() -> FloatDuration {
+        FloatDuration { secs: f64::MIN }
+    }
+    pub fn max_value() -> FloatDuration {
+        FloatDuration { secs: f64::MAX }
     }
 
     pub fn as_std(&self) -> error::Result<time::Duration> {
@@ -347,8 +355,8 @@ mod tests {
         let mut buffer1_2 = "".to_string();
         let duration1 = FloatDuration::minutes(3.5);
         
-        write!(buffer1, "{}", duration1);
-        write!(buffer1_2, "{}", duration1.decompose());
+        write!(buffer1, "{}", duration1).unwrap();
+        write!(buffer1_2, "{}", duration1.decompose()).unwrap();
         assert_eq!(buffer1, "3.5 minutes");
         assert_eq!(buffer1_2, "00:03:30.0");
 
@@ -356,10 +364,9 @@ mod tests {
         let mut buffer2_2 = "".to_string();
         let duration2 = FloatDuration::days(3.0) + FloatDuration::hours(12.0);
 
-        write!(buffer2, "{}", duration2);
-        write!(buffer2_2, "{}", duration2.decompose());
+        write!(buffer2, "{}", duration2).unwrap();
+        write!(buffer2_2, "{}", duration2.decompose()).unwrap();
         assert_eq!(buffer2, "3.5 days");
         assert_eq!(buffer2_2, "3d 12:00:00.0");
     }
 }
-
