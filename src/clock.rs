@@ -38,6 +38,16 @@ impl GameClock {
     pub fn game_start_time(&self) -> chrono::DateTime<chrono::Local> {
         self.wall_start_global
     }
+    pub fn last_frame_game_time(&self) -> FloatDuration {
+        self.game_start_frame
+    }
+    pub fn last_frame_wall_time(&self) -> chrono::DateTime<chrono::Local> {
+        self.wall_start_frame
+    }
+    pub fn frame_elapsed_time(&self) -> FloatDuration {
+        chrono::Local::now().float_duration_since(self.wall_start_frame).unwrap()
+    }
+
     pub fn clock_multiplier(&self) -> f64 {
         self.clock_multiplier
     }
@@ -70,5 +80,17 @@ impl GameClock {
 }
 
 impl GameTime {
+    pub fn elapsed_wall_time(&self) -> FloatDuration {
+        self.wall_time_elapsed
+    }
+    pub fn elapsed_game_time(&self) -> FloatDuration {
+        self.game_time_elapsed
+    }
+    pub fn total_game_time(&self) -> FloatDuration {
+        self.game_time_total
+    }
+    pub fn frame_number(&self) -> u64 {
+        self.frame_number
+    }
 }
 
