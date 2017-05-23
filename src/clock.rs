@@ -1,6 +1,9 @@
+use std::thread;
+
 use chrono;
 
-use super::duration::{FloatDuration, TimePoint};
+use framerate::{FrameCounter, FrameRateSampler};
+use duration::{FloatDuration, TimePoint};
 
 pub struct GameTime {
     frame_start: chrono::DateTime<chrono::Local>,
@@ -60,6 +63,19 @@ impl GameClock {
     pub fn with_clock_multiplier(mut self, val: f64) -> GameClock {
         self.clock_multiplier = val;
         self
+    }
+
+    pub fn sleep_remaining_via<S, F>(&mut self, counter: &FrameCounter<S>, f: F) 
+        where S: FrameRateSampler,
+              F: FnOnce(FloatDuration)
+    {
+        let remaining_time = counter.target_time_per_frame() 
+            - chrono::Local::now().float_duration_since(self.wall_start_frame).unwrap();
+        f(remaining_time)
+    }
+
+    pub fn sleep_remaining<S: FrameRateSampler>(&mut self, counter: &FrameCounter<S>) {
+        self.sleep_remaining_via(counter, |rem| thread::sleep(rem.as_std().unwrap()))
     }
 
     pub fn tick(&mut self) -> GameTime {
