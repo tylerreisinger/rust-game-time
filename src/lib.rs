@@ -4,6 +4,6 @@ extern crate time;
 pub mod clock;
 pub mod duration;
 pub mod error;
-pub mod frame;
+pub mod framerate;
 
 pub use self::time::*;
