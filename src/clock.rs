@@ -61,12 +61,13 @@ impl GameClock {
     pub fn tick(&mut self) -> GameTime {
         let now = chrono::Local::now();
 
+        self.current_frame += 1;
+
         let time_elapsed = now.float_duration_since(self.wall_start_frame).unwrap();
         let game_time_elapsed = time_elapsed * self.clock_multiplier;
         let cur_game_time = self.game_start_frame + game_time_elapsed;
         let current_frame = self.current_frame;
 
-        self.current_frame += 1;
         self.game_time_elapsed = game_time_elapsed;
         self.wall_time_elapsed = time_elapsed;
         self.game_start_frame = cur_game_time;
@@ -83,10 +84,23 @@ impl GameClock {
 }
 
 impl GameTime {
+    pub fn new(frame_start: chrono::DateTime<chrono::Local>, 
+            wall_time_elapsed: FloatDuration, game_time_elapsed: FloatDuration,
+            game_time_total: FloatDuration, frame_number: u64) -> GameTime 
+    {
+        GameTime {
+            frame_start, 
+            wall_time_elapsed, 
+            game_time_elapsed,
+            game_time_total,
+            frame_number: frame_number,
+        }
+
+    }
     pub fn frame_start_time(&self) -> chrono::DateTime<chrono::Local> {
         self.frame_start
     }
-    pub fn elapsed_frame_time(&self) -> FloatDuration {
+    pub fn elapsed_time_since_frame_start(&self) -> FloatDuration {
         chrono::Local::now().float_duration_since(self.frame_start).unwrap()
     }
     pub fn elapsed_wall_time(&self) -> FloatDuration {
@@ -103,3 +117,35 @@ impl GameTime {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use duration::{FloatDuration, TimePoint};
+
+    #[test]
+    fn construct_game_time() {
+        let gt1 = GameTime::new(chrono::Local::now(), FloatDuration::milliseconds(20.0),
+            FloatDuration::milliseconds(40.0), FloatDuration::seconds(2.04), 5);
+
+        assert_eq!(gt1.frame_number(), 5);
+        assert_eq!(gt1.elapsed_wall_time(), FloatDuration::milliseconds(20.0));
+        assert_eq!(gt1.elapsed_game_time(), FloatDuration::milliseconds(40.0));
+        assert_eq!(gt1.total_game_time(), FloatDuration::seconds(2.04));
+        assert!(gt1.elapsed_time_since_frame_start() > FloatDuration::nanoseconds(0.0));
+        assert!(gt1.elapsed_time_since_frame_start() < FloatDuration::seconds(1.0));
+    }
+
+    #[test]
+    fn construct_game_clock() {
+        let mut clock1 = GameClock::new();
+        assert_eq!(clock1.current_frame(), 0);
+        let game_time1 = clock1.tick();
+        assert_eq!(clock1.current_frame(), 1);
+        assert!(clock1.last_frame_game_time() > FloatDuration::zero());
+        assert!(clock1.frame_elapsed_time() > FloatDuration::zero());
+
+        assert_eq!(game_time1.frame_number(), 1);
+        assert_eq!(game_time1.total_game_time(), game_time1.elapsed_game_time());
+
+    }
+}

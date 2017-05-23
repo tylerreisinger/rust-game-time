@@ -34,7 +34,7 @@ impl<S: FrameRateSampler> FrameCounter<S> {
         FloatDuration::seconds(1.0) / self.target_frame_rate
     }
     pub fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
-        self.target_time_per_frame() - time.elapsed_frame_time() 
+        self.target_time_per_frame() - time.elapsed_time_since_frame_start() 
     }
     pub fn average_frame_rate(&self) -> f64 {
         self.sampler.average_frame_rate()
