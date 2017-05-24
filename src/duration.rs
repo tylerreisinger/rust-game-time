@@ -2,25 +2,51 @@ use std::time;
 use std::fmt;
 use std::ops;
 use std::f64;
+use std::u64;
 
 use chrono;
 
 use super::error;
 use super::error::DurationError;
 
-pub const SECS_PER_DAY: f64 = 60.0*60.0*24.0;
-pub const SECS_PER_HOUR: f64 = 60.0*60.0;
+/// Number of seconds in a minute.
 pub const SECS_PER_MINUTE: f64 = 60.0;
+/// Number of seconds in an hour.
+pub const SECS_PER_HOUR: f64 = SECS_PER_MINUTE*60.0;
+/// Number of seconds in a day.
+pub const SECS_PER_DAY: f64 = SECS_PER_HOUR*24.0;
+/// Number of seconds in a year.
+pub const SECS_PER_YEAR: f64 = SECS_PER_DAY*365.0;
 
+
+/// A specific point in time.
+/// 
+/// Types implementing `TimePoint` can have a `FloatDuration` computed between them
+/// via `float_duration_since` in either direction.
 pub trait TimePoint<Rhs=Self> {
+    /// The amount of time between two `TimePoint`s.
     fn float_duration_since(self, rhs: Rhs) -> error::Result<FloatDuration>;
 }
 
+/// A time duration stored as a floating point quantity.
+/// 
+/// Unlike `std::time::Duration` or `chrono::Duration`, `FloatDuration`
+/// aims to be convenient and fast to use in simulation and mathematical expressions 
+/// rather than to behave like a calendar or perfectly
+/// accurately represent precise time scales. 
+/// 
+/// Internally, a `FloatDuration` stores a single `f64` number of floating-point seconds,
+/// thus it is only as precise as the `f64` type.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct FloatDuration {
     secs: f64,
 }
 
+/// A duration decomposed into components.
+/// 
+/// `DecomposedTime` is mainly provided for a more human-readable and composable
+/// representation of a `FloatDuration`. It may be converted back-and-forth
+/// between `FloatDuration` at will.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct DecomposedTime {
     pub days: u32,
@@ -32,32 +58,40 @@ pub struct DecomposedTime {
 }
 
 impl FloatDuration {
-    pub fn new(secs: f64) -> FloatDuration {
-        FloatDuration {secs}
-    }
-
+    /// Create a new `FloatDuration` representing a number of days.
     pub fn days(days: f64) -> FloatDuration {
         FloatDuration {secs: days * (3600.0 * 24.0)}
     }
+    /// Create a new `FloatDuration` representing a number of hours.
     pub fn hours(hours: f64) -> FloatDuration {
         FloatDuration {secs: hours * 3600.0}
     }
+    /// Create a new `FloatDuration` representing a number of minutes.
     pub fn minutes(mins: f64) -> FloatDuration {
         FloatDuration {secs: mins * 60.0}
     }
+    /// Create a new `FloatDuration` representing a number of seconds.
     pub fn seconds(secs: f64) -> FloatDuration {
         FloatDuration {secs}
     }
+    /// Create a new `FloatDuration` representing a number of milliseconds.
     pub fn milliseconds(millis: f64) -> FloatDuration {
         FloatDuration {secs: millis / 1000.0}
     }
+    /// Create a new `FloatDuration` representing a number of microseconds.
     pub fn microseconds(micros: f64) -> FloatDuration {
         FloatDuration {secs: micros / 1.0e6}
     }
+    /// Create a new `FloatDuration` representing a number of nanoseconds.
     pub fn nanoseconds(nanos: f64) -> FloatDuration {
         FloatDuration {secs: nanos / 1.0e9}
     }
 
+    /// Decompose a `FloatDuration` into a `DecomposedTime` representation.
+    /// 
+    /// The result represents the same duration, but in a more human-readable
+    /// way. It may be converted back into a `FloatDuration` via 
+    /// `FloatDuration::from_decomposed`.
     pub fn decompose(&self) -> DecomposedTime {
         let mut secs_left = self.secs;
 
@@ -80,51 +114,72 @@ impl FloatDuration {
         }
     }
 
+    /// Return the total number of fractional days represented by the `FloatDuration`.
     pub fn as_days(&self) -> f64 {
         self.secs / SECS_PER_DAY
     }
+    /// Return the total number of fractional hours represented by the `FloatDuration`.
     pub fn as_hours(&self) -> f64 {
         self.secs / SECS_PER_HOUR
     }
+    /// Return the total number of fractional minutes represented by the `FloatDuration`.
     pub fn as_minutes(&self) -> f64 {
         self.secs / SECS_PER_MINUTE
     }
+    /// Return the total number of fractional seconds represented by the `FloatDuration`.
     pub fn as_seconds(&self) -> f64 {
         self.secs
     }
+    /// Return the total number of fractional milliseconds represented by the `FloatDuration`.
     pub fn as_milliseconds(&self) -> f64 {
         self.secs * 1.0e3
     }
+    /// Return the total number of fractional microseconds represented by the `FloatDuration`.
     pub fn as_microseconds(&self) -> f64 {
         self.secs * 1.0e6
     }
+    /// Return the total number of fractional nanoseconds represented by the `FloatDuration`.
     pub fn as_nanoseconds(&self) -> f64 {
         self.secs * 1.0e9
     }
 
+    /// Compute the absolute value of this duration.
     pub fn abs(self) -> FloatDuration {
         FloatDuration { secs: self.secs.abs() }
     }
+    /// Return a new `FloatDuration` that represents zero elapsed time.
     pub fn zero() -> FloatDuration {
         FloatDuration {secs: 0.0}
     }
+    /// Returns true is this duration represents zero elapsed time (equals `FloatDuration::zero()`).
     pub fn is_zero(&self) -> bool {
         self.secs == 0.0 
     }
+    /// Returns true if the FloatDuration holds a positive amount of time.
     pub fn is_positive(&self) -> bool {
         self.secs.is_sign_positive()
     }
+    /// Returns true if the FloatDuration holds a negative amount of time.
     pub fn is_negative(&self) -> bool {
         self.secs.is_sign_negative()
     }
 
+    /// Return a new `FloatDuration` with the minimum possible value.
     pub fn min_value() -> FloatDuration {
         FloatDuration { secs: f64::MIN }
     }
+    /// Return a new `FloatDuration` with the maximum possible value.
     pub fn max_value() -> FloatDuration {
         FloatDuration { secs: f64::MAX }
     }
 
+    /// Create a `std::time::Duration` object from a `FloatDuration`.
+    /// 
+    /// # Errors
+    /// `std::time::Duration` does not support negative values or seconds
+    /// greater than `std::u64::MAX`. This function will return a 
+    /// `DurationError::StdOutOfRange` if the `FloatDuration` value is outside
+    /// of either of those bounds.
     pub fn as_std(&self) -> error::Result<time::Duration> {
         if self.secs.is_sign_negative() {
             Err(DurationError::StdOutOfRange)
@@ -132,15 +187,21 @@ impl FloatDuration {
             let seconds = self.secs.trunc();
             let nanos = self.secs.fract() * 1e9;
 
-            Ok(time::Duration::new(seconds as u64, nanos as u32))
+            if seconds > u64::MAX as f64 {
+                Err(DurationError::StdOutOfRange)
+            } else {
+                Ok(time::Duration::new(seconds as u64, nanos as u32))
+            }
         }
     }
 
-    pub fn from_std(duration: time::Duration) -> error::Result<FloatDuration> {
-        Ok(FloatDuration::seconds(
-            (duration.as_secs() as f64) + (duration.subsec_nanos() as f64)*1.0e-9))
+    /// Create a `FloatDuration` object from a `std::time::Duration`.
+    pub fn from_std(duration: time::Duration) -> FloatDuration {
+        FloatDuration::seconds(
+            (duration.as_secs() as f64) + (duration.subsec_nanos() as f64)*1.0e-9)
     }
 
+    /// Create a `FloatDuration` object from a `DecomposedTime`.
     pub fn from_decomposed(decomposed: &DecomposedTime) -> FloatDuration {
         let seconds = (decomposed.days as f64)*SECS_PER_DAY
             + (decomposed.hours as f64)*SECS_PER_HOUR
@@ -149,7 +210,7 @@ impl FloatDuration {
             + decomposed.fractional_seconds;
 
         FloatDuration {
-            secs: seconds
+            secs: (decomposed.sign as f64)*seconds
         }
     }
 }
@@ -178,7 +239,7 @@ impl FloatDuration {
                 duration.to_std()?
             };
 
-        let float_duration = FloatDuration::from_std(std_duration)?;
+        let float_duration = FloatDuration::from_std(std_duration);
         if is_negative {
             Ok(-float_duration)
         } else {
@@ -188,7 +249,7 @@ impl FloatDuration {
 }
 
 impl DecomposedTime {
-    pub fn new() -> DecomposedTime {
+    pub fn zero() -> DecomposedTime {
         DecomposedTime { days: 0, hours: 0, minutes: 0, seconds: 0,
             fractional_seconds: 0.0, sign: 1 }
     }
@@ -217,13 +278,13 @@ impl<Tz: chrono::TimeZone> TimePoint for chrono::DateTime<Tz> {
 impl TimePoint for time::Instant {
     fn float_duration_since(self, since: time::Instant) -> error::Result<FloatDuration> {
         let std_duration = self.duration_since(since);
-        FloatDuration::from_std(std_duration)
+        Ok(FloatDuration::from_std(std_duration))
     }
 }
 impl TimePoint for time::SystemTime {
     fn float_duration_since(self, since: time::SystemTime) -> error::Result<FloatDuration> {
         let std_duration = self.duration_since(since)?;
-        FloatDuration::from_std(std_duration)
+        Ok(FloatDuration::from_std(std_duration))
     }
 }
 
@@ -321,6 +382,11 @@ impl ops::MulAssign<f64> for FloatDuration {
 impl ops::DivAssign<f64> for FloatDuration {
     fn div_assign(&mut self, rhs: f64) {
         self.secs /= rhs;
+    }
+}
+impl Default for FloatDuration {
+    fn default() -> FloatDuration {
+        FloatDuration::zero()
     }
 }
 
