@@ -304,12 +304,20 @@ impl fmt::Display for DecomposedTime {
         if self.sign.is_negative() {
             write!(fmt, "-")?;
         }
-        write!(fmt,
-               "{:02}:{:02}:{:02}.{}",
-               self.hours,
-               self.minutes,
-               self.seconds,
-               self.fractional_seconds)
+        if self.fractional_seconds > 0.0 {
+            write!(fmt,
+                   "{:02}:{:02}:{}{}",
+                   self.hours,
+                   self.minutes,
+                   if self.seconds < 10 { "0" } else { "" },
+                   self.seconds as f64 + self.fractional_seconds)
+        } else {
+            write!(fmt,
+                   "{:02}:{:02}:{:02}",
+                   self.hours,
+                   self.minutes,
+                   self.seconds)
+        }
     }
 }
 
@@ -495,6 +503,16 @@ mod tests {
         let std_duration2 = (-duration2).as_std().unwrap();
         assert_eq!(std_duration2, time::Duration::new(3600 * 2, 0));
         assert_eq!(FloatDuration::from_std(std_duration2), -duration2);
+
+        assert_eq!(FloatDuration::zero().as_std().unwrap(),
+                   time::Duration::new(0, 0));
+        assert!(FloatDuration::nanoseconds(-1.0).as_std().is_err());
+        assert!(FloatDuration::max_value().as_std().is_err());
+
+        assert_eq!(FloatDuration::from_std(time::Duration::new(0, 1)),
+                   FloatDuration::nanoseconds(1.0));
+        assert_eq!(FloatDuration::from_std(time::Duration::new(1, 1)),
+                   FloatDuration::seconds(1.0) + FloatDuration::nanoseconds(1.0));
     }
 
     #[test]
@@ -504,19 +522,25 @@ mod tests {
         let mut buffer1 = "".to_string();
         let mut buffer1_2 = "".to_string();
         let duration1 = FloatDuration::minutes(3.5);
-
         write!(buffer1, "{}", duration1).unwrap();
         write!(buffer1_2, "{}", duration1.decompose()).unwrap();
         assert_eq!(buffer1, "3.5 minutes");
-        assert_eq!(buffer1_2, "00:03:30.0");
+        assert_eq!(buffer1_2, "00:03:30");
 
         let mut buffer2 = "".to_string();
         let mut buffer2_2 = "".to_string();
         let duration2 = FloatDuration::days(3.0) + FloatDuration::hours(12.0);
-
         write!(buffer2, "{}", duration2).unwrap();
         write!(buffer2_2, "{}", duration2.decompose()).unwrap();
         assert_eq!(buffer2, "3.5 days");
-        assert_eq!(buffer2_2, "3d 12:00:00.0");
+        assert_eq!(buffer2_2, "3d 12:00:00");
+
+        let mut buffer3 = "".to_string();
+        let mut buffer3_2 = "".to_string();
+        let duration3 = FloatDuration::microseconds(100.0);
+        write!(buffer3, "{}", duration3).unwrap();
+        write!(buffer3_2, "{}", duration3.decompose()).unwrap();
+        assert_eq!(buffer3, "100 microseconds");
+        assert_eq!(buffer3_2, "00:00:00.0001");
     }
 }
