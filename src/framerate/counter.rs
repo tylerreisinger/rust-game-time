@@ -14,9 +14,9 @@ pub struct FrameCounter<S: FrameRateSampler> {
 impl<S: FrameRateSampler> FrameCounter<S> {
     pub fn new(target_frame_rate: f64, sampler: S) -> FrameCounter<S> {
         FrameCounter {
-            target_frame_rate, 
+            target_frame_rate,
             slow_threshold: DEFAULT_SLOW_THRESHOLD,
-            sampler 
+            sampler,
         }
     }
     pub fn set_slow_threshold(&mut self, val: f64) -> &mut FrameCounter<S> {
@@ -39,7 +39,7 @@ impl<S: FrameRateSampler> FrameCounter<S> {
     }
 
     pub fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
-        self.target_time_per_frame() - time.elapsed_time_since_frame_start() 
+        self.target_time_per_frame() - time.elapsed_time_since_frame_start()
     }
     pub fn average_frame_rate(&self) -> f64 {
         self.sampler.average_frame_rate()
@@ -48,8 +48,8 @@ impl<S: FrameRateSampler> FrameCounter<S> {
         1.0 / time.elapsed_game_time().as_seconds()
     }
     pub fn is_running_slow(&self, time: &GameTime) -> bool {
-        let ratio = self.target_time_per_frame().as_seconds() 
-            / time.elapsed_wall_time().as_seconds();
+        let ratio = self.target_time_per_frame().as_seconds() /
+                    time.elapsed_wall_time().as_seconds();
         ratio <= self.slow_threshold
     }
     pub fn is_saturated(&self) -> bool {
@@ -60,6 +60,6 @@ impl<S: FrameRateSampler> FrameCounter<S> {
     }
 
     pub fn tick(&mut self, time: &GameTime) {
-        self.sampler.tick(time);        
+        self.sampler.tick(time);
     }
 }

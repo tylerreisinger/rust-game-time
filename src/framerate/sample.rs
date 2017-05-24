@@ -31,7 +31,7 @@ impl RunningAverageSampler {
         RunningAverageSampler {
             max_samples,
             current_samples: 0,
-            current_average: 0.0
+            current_average: 0.0,
         }
     }
 }
@@ -44,9 +44,8 @@ impl FrameRateSampler for RunningAverageSampler {
         let num_samples = self.current_samples;
 
         let effective_fps = 1.0 / time.elapsed_game_time().as_seconds();
-        let new_average = 
-            ((self.current_average * (num_samples-1) as f64) + effective_fps) 
-                / (num_samples as f64);
+        let new_average = ((self.current_average * (num_samples - 1) as f64) + effective_fps) /
+                          (num_samples as f64);
 
         self.current_average = new_average;
     }
@@ -63,9 +62,7 @@ impl LinearAverageSampler {
         LinearAverageSampler::with_max_samples(DEFAULT_NUM_SAMPLES)
     }
     pub fn with_max_samples(max_samples: u32) -> LinearAverageSampler {
-        LinearAverageSampler {
-            past_data: VecDeque::with_capacity(max_samples as usize),
-        }
+        LinearAverageSampler { past_data: VecDeque::with_capacity(max_samples as usize) }
     }
 }
 
@@ -74,7 +71,7 @@ impl FrameRateSampler for LinearAverageSampler {
         let effective_fps = 1.0 / time.elapsed_game_time().as_seconds();
 
         if self.is_saturated() {
-            self.past_data.pop_front();            
+            self.past_data.pop_front();
         }
         self.past_data.push_back(effective_fps);
     }
