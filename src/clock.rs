@@ -3,7 +3,7 @@ use std::thread;
 use chrono;
 
 use framerate::{FrameCounter, FrameRateSampler};
-use duration::{FloatDuration, TimePoint};
+use float_duration::{FloatDuration, TimePoint};
 
 pub struct GameTime {
     frame_start: chrono::DateTime<chrono::Local>,
@@ -79,7 +79,7 @@ impl GameClock {
     }
 
     pub fn sleep_remaining<S: FrameRateSampler>(&mut self, counter: &FrameCounter<S>) {
-        self.sleep_remaining_via(counter, |rem| thread::sleep(rem.as_std().unwrap()))
+        self.sleep_remaining_via(counter, |rem| thread::sleep(rem.to_std().unwrap()))
     }
 
     pub fn tick(&mut self) -> GameTime {
@@ -148,7 +148,7 @@ impl GameTime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use duration::{FloatDuration, TimePoint};
+    use float_duration::{FloatDuration, TimePoint};
 
     #[test]
     fn construct_game_time() {

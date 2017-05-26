@@ -1,8 +1,8 @@
 extern crate chrono;
 extern crate time;
+extern crate float_duration;
 
 pub mod clock;
-pub mod duration;
 pub mod error;
 pub mod framerate;
 

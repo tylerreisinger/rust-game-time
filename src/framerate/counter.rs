@@ -1,4 +1,4 @@
-use duration::FloatDuration;
+use float_duration::FloatDuration;
 use clock::GameTime;
 use super::FrameRateSampler;
 
