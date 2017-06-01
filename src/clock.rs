@@ -1,7 +1,10 @@
+use std::thread;
 use std::time;
 
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
+
+use framerate::{FrameCounter, FrameRateSampler};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeProgression {
@@ -69,7 +72,16 @@ impl GameClock {
         self
     }
 
-    pub fn tick(&mut self) -> GameTime {
+    pub fn do_frame<F, S>(&mut self, counter: &mut FrameCounter<S>, f: &mut F)
+        where F: FnMut(&GameTime),
+              S: FrameRateSampler
+    {
+        let game_time = self.tick(counter);
+        f(&game_time);
+        self.sleep_remaining(counter);
+    }
+
+    pub fn tick<S: FrameRateSampler>(&mut self, counter: &mut FrameCounter<S>) -> GameTime {
         let frame_start = chrono::Local::now();
 
         self.current_frame += 1;
@@ -77,7 +89,11 @@ impl GameClock {
         let elapsed_wall_time = frame_start
             .float_duration_since(self.frame_wall_time)
             .unwrap();
-        let elapsed_game_time = elapsed_wall_time * self.clock_multiplier;
+        let elapsed_game_time = match self.time_progression {
+            TimeProgression::FixedStep => counter.target_time_per_frame(), 
+            TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
+        };
+
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
         self.frame_wall_time = frame_start;
@@ -85,13 +101,32 @@ impl GameClock {
         self.elapsed_game_time = elapsed_game_time;
         self.elapsed_wall_time = elapsed_wall_time;
 
-        GameTime {
+        let time = GameTime {
             frame_wall_time: frame_start,
             frame_game_time: total_game_time,
             elapsed_game_time,
             elapsed_wall_time,
             frame_number: self.current_frame,
-        }
+        };
+
+        counter.tick(&time);
+
+        time
+    }
+
+    pub fn sleep_remaining_via<S, F>(&mut self, counter: &FrameCounter<S>, f: F)
+        where S: FrameRateSampler,
+              F: FnOnce(FloatDuration)
+    {
+        let remaining_time = counter.target_time_per_frame() -
+                             chrono::Local::now()
+                                 .float_duration_since(self.frame_wall_time)
+                                 .unwrap();
+        f(remaining_time)
+    }
+
+    pub fn sleep_remaining<S: FrameRateSampler>(&mut self, counter: &FrameCounter<S>) {
+        self.sleep_remaining_via(counter, |rem| thread::sleep(rem.to_std().unwrap()))
     }
 }
 
@@ -101,4 +136,25 @@ impl Default for GameClock {
     }
 }
 
-impl GameTime {}
+impl GameTime {
+    pub fn frame_game_time(&self) -> time::Duration {
+        self.frame_game_time
+    }
+    pub fn frame_wall_time(&self) -> chrono::DateTime<chrono::Local> {
+        self.frame_wall_time
+    }
+    pub fn elapsed_game_time(&self) -> FloatDuration {
+        self.elapsed_game_time
+    }
+    pub fn elapsed_wall_time(&self) -> FloatDuration {
+        self.elapsed_wall_time
+    }
+    pub fn elapsed_time_since_frame_start(&self) -> FloatDuration {
+        chrono::Local::now()
+            .float_duration_since(self.frame_wall_time)
+            .unwrap()
+    }
+    pub fn frame_number(&self) -> u64 {
+        self.frame_number
+    }
+}
