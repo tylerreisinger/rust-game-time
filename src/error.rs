@@ -14,9 +14,10 @@ pub enum DurationError {
 impl Error for DurationError {
     fn description(&self) -> &str {
         match *self {
-            DurationError::StdOutOfRange => 
+            DurationError::StdOutOfRange => {
                 "Conversion between FloatDuration and std::time::Duration \
-                 out of range",
+                 out of range"
+            }
             DurationError::SystemTimeError(ref e) => e.description(),
         }
     }
