@@ -90,11 +90,7 @@ impl GameClock {
             .float_duration_since(self.frame_wall_time)
             .unwrap();
 
-        let elapsed_game_time = match self.time_progression {
-            TimeProgression::FixedStep => counter.target_time_per_frame() * self.clock_multiplier, 
-            TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
-        };
-
+        let elapsed_game_time = self.elapsed_game_time_from_wall_time(counter, elapsed_wall_time);
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
         self.frame_wall_time = frame_start;
@@ -113,6 +109,16 @@ impl GameClock {
         counter.tick(&time);
 
         time
+    }
+
+    fn elapsed_game_time_from_wall_time<S: FrameRateSampler>(&self,
+                                                             counter: &mut FrameCounter<S>,
+                                                             elapsed_wall_time: FloatDuration)
+                                                             -> FloatDuration {
+        match self.time_progression {
+            TimeProgression::FixedStep => counter.target_time_per_frame() * self.clock_multiplier, 
+            TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
+        }
     }
 
     pub fn sleep_remaining_via<S, F>(&mut self, counter: &FrameCounter<S>, f: F)
