@@ -1,4 +1,4 @@
-use clock::GameClock;
+use clock::{GameTime, GameClock};
 use framerate::counter::FrameCount;
 
 #[derive(Debug)]
@@ -27,6 +27,8 @@ impl FrameRunner {
     pub fn counter_mut(&mut self) -> &mut FrameCount {
         self.counter.as_mut()
     }
-
-    pub fn tick(&self) {}
+    pub fn tick(&mut self) -> GameTime {
+        let time = self.clock.tick(self.counter.as_mut());
+        time
+    }
 }

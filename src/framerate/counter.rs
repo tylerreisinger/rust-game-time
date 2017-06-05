@@ -10,6 +10,7 @@ pub trait FrameCount: Debug {
     fn target_frame_rate(&self) -> f64;
     fn target_time_per_frame(&self) -> FloatDuration;
     fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration;
+    fn tick(&mut self, time: &GameTime);
 }
 
 #[derive(Debug, Clone)]
@@ -57,10 +58,6 @@ impl<S: FrameRateSampler> FrameCounter<S> {
     pub fn sampler(&self) -> &S {
         &self.sampler
     }
-
-    pub fn tick(&mut self, time: &GameTime) {
-        self.sampler.tick(time);
-    }
 }
 
 impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
@@ -72,5 +69,8 @@ impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
     }
     fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
         self.target_time_per_frame() - time.elapsed_time_since_frame_start()
+    }
+    fn tick(&mut self, time: &GameTime) {
+        self.sampler.tick(time);
     }
 }

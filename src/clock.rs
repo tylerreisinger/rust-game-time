@@ -72,16 +72,9 @@ impl GameClock {
         self
     }
 
-    pub fn do_frame<F, S>(&mut self, counter: &mut FrameCounter<S>, f: &mut F)
-        where F: FnMut(&GameTime),
-              S: FrameRateSampler
+    pub fn tick<C>(&mut self, counter: &mut C) -> GameTime
+        where C: FrameCount + ?Sized
     {
-        let game_time = self.tick(counter);
-        f(&game_time);
-        self.sleep_remaining(counter);
-    }
-
-    pub fn tick<S: FrameRateSampler>(&mut self, counter: &mut FrameCounter<S>) -> GameTime {
         let frame_start = chrono::Local::now();
 
         self.current_frame += 1;
@@ -111,18 +104,20 @@ impl GameClock {
         time
     }
 
-    fn elapsed_game_time_from_wall_time<S: FrameRateSampler>(&self,
-                                                             counter: &mut FrameCounter<S>,
-                                                             elapsed_wall_time: FloatDuration)
-                                                             -> FloatDuration {
+    fn elapsed_game_time_from_wall_time<C>(&self,
+                                           counter: &mut C,
+                                           elapsed_wall_time: FloatDuration)
+                                           -> FloatDuration
+        where C: FrameCount + ?Sized
+    {
         match self.time_progression {
             TimeProgression::FixedStep => counter.target_time_per_frame() * self.clock_multiplier, 
             TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
         }
     }
 
-    pub fn sleep_remaining_via<S, F>(&mut self, counter: &FrameCounter<S>, f: F)
-        where S: FrameRateSampler,
+    pub fn sleep_remaining_via<C, F>(&mut self, counter: &C, f: F)
+        where C: FrameCount + ?Sized,
               F: FnOnce(FloatDuration)
     {
         let remaining_time = counter.target_time_per_frame() -
@@ -132,7 +127,9 @@ impl GameClock {
         f(remaining_time)
     }
 
-    pub fn sleep_remaining<S: FrameRateSampler>(&mut self, counter: &FrameCounter<S>) {
+    pub fn sleep_remaining<C>(&mut self, counter: &C)
+        where C: FrameCount + ?Sized
+    {
         self.sleep_remaining_via(counter, |rem| thread::sleep(rem.to_std().unwrap()))
     }
 }
