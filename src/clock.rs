@@ -89,8 +89,9 @@ impl GameClock {
         let elapsed_wall_time = frame_start
             .float_duration_since(self.frame_wall_time)
             .unwrap();
+
         let elapsed_game_time = match self.time_progression {
-            TimeProgression::FixedStep => counter.target_time_per_frame(), 
+            TimeProgression::FixedStep => counter.target_time_per_frame() * self.clock_multiplier, 
             TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
         };
 

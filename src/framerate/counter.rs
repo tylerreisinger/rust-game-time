@@ -4,6 +4,12 @@ use super::FrameRateSampler;
 
 pub const DEFAULT_SLOW_THRESHOLD: f64 = 0.95;
 
+pub trait FrameCount {
+    fn target_frame_rate(&self) -> f64;
+    fn target_time_per_frame(&self) -> FloatDuration;
+    fn remaining_frame_time(&self) -> FloatDuration;
+}
+
 #[derive(Debug, Clone)]
 pub struct FrameCounter<S: FrameRateSampler> {
     target_frame_rate: f64,
