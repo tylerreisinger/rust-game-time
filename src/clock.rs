@@ -23,11 +23,9 @@ pub struct GameTime {
 
 #[derive(Debug, Clone)]
 pub struct GameClock {
+    last_frame_time: GameTime,
     start_wall_time: chrono::DateTime<chrono::Local>,
-    frame_wall_time: chrono::DateTime<chrono::Local>,
     total_game_time: time::Duration,
-    elapsed_game_time: FloatDuration,
-    elapsed_wall_time: FloatDuration,
     current_frame: u64,
     clock_multiplier: f64,
     time_progression: TimeProgression,
@@ -36,13 +34,18 @@ pub struct GameClock {
 impl GameClock {
     pub fn new() -> GameClock {
         let now = chrono::Local::now();
-
-        GameClock {
-            start_wall_time: now,
+        let start_game_time = GameTime {
             frame_wall_time: now,
-            total_game_time: time::Duration::new(0, 0),
+            frame_game_time: time::Duration::new(0, 0),
             elapsed_game_time: FloatDuration::zero(),
             elapsed_wall_time: FloatDuration::zero(),
+            frame_number: 0,
+        };
+
+        GameClock {
+            last_frame_time: start_game_time,
+            start_wall_time: now,
+            total_game_time: time::Duration::new(0, 0),
             current_frame: 0,
             clock_multiplier: 1.0,
             time_progression: TimeProgression::VariableStep,
@@ -56,12 +59,15 @@ impl GameClock {
         self.start_wall_time
     }
     pub fn frame_wall_time(&self) -> chrono::DateTime<chrono::Local> {
-        self.frame_wall_time
+        self.last_frame_time.frame_wall_time
     }
     pub fn frame_elapsed_time(&self) -> FloatDuration {
         chrono::Local::now()
-            .float_duration_since(self.frame_wall_time)
+            .float_duration_since(self.frame_wall_time())
             .unwrap()
+    }
+    pub fn last_frame_time(&self) -> &GameTime {
+        &self.last_frame_time
     }
 
     pub fn clock_multiplier(&self) -> f64 {
@@ -80,16 +86,13 @@ impl GameClock {
         self.current_frame += 1;
 
         let elapsed_wall_time = frame_start
-            .float_duration_since(self.frame_wall_time)
+            .float_duration_since(self.frame_wall_time())
             .unwrap();
 
         let elapsed_game_time = self.elapsed_game_time_from_wall_time(counter, elapsed_wall_time);
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
-        self.frame_wall_time = frame_start;
         self.total_game_time = total_game_time;
-        self.elapsed_game_time = elapsed_game_time;
-        self.elapsed_wall_time = elapsed_wall_time;
 
         let time = GameTime {
             frame_wall_time: frame_start,
@@ -98,6 +101,8 @@ impl GameClock {
             elapsed_wall_time,
             frame_number: self.current_frame,
         };
+
+        self.last_frame_time = time.clone();
 
         counter.tick(&time);
 
@@ -122,7 +127,7 @@ impl GameClock {
     {
         let remaining_time = counter.target_time_per_frame() -
                              chrono::Local::now()
-                                 .float_duration_since(self.frame_wall_time)
+                                 .float_duration_since(self.frame_wall_time())
                                  .unwrap();
         f(remaining_time)
     }
