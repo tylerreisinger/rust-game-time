@@ -1,10 +1,12 @@
+use std::fmt::Debug;
+
 use std::collections::VecDeque;
 
 use clock::GameTime;
 
 pub const DEFAULT_NUM_SAMPLES: u32 = 128;
 
-pub trait FrameRateSampler {
+pub trait FrameRateSampler: Debug {
     fn tick(&mut self, time: &GameTime);
     fn average_frame_rate(&self) -> f64;
     fn is_saturated(&self) -> bool;

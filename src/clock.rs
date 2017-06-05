@@ -4,7 +4,7 @@ use std::time;
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
 
-use framerate::{FrameCounter, FrameRateSampler};
+use framerate::{FrameCounter, FrameRateSampler, FrameCount};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeProgression {

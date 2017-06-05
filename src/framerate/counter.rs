@@ -1,13 +1,15 @@
+use std::fmt::Debug;
+
 use float_duration::FloatDuration;
 use clock::GameTime;
 use super::FrameRateSampler;
 
 pub const DEFAULT_SLOW_THRESHOLD: f64 = 0.95;
 
-pub trait FrameCount {
+pub trait FrameCount: Debug {
     fn target_frame_rate(&self) -> f64;
     fn target_time_per_frame(&self) -> FloatDuration;
-    fn remaining_frame_time(&self) -> FloatDuration;
+    fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration;
 }
 
 #[derive(Debug, Clone)]
@@ -37,16 +39,7 @@ impl<S: FrameRateSampler> FrameCounter<S> {
         self.target_frame_rate = val;
         self
     }
-    pub fn target_frame_rate(&self) -> f64 {
-        self.target_frame_rate
-    }
-    pub fn target_time_per_frame(&self) -> FloatDuration {
-        FloatDuration::seconds(1.0) / self.target_frame_rate
-    }
 
-    pub fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
-        self.target_time_per_frame() - time.elapsed_time_since_frame_start()
-    }
     pub fn average_frame_rate(&self) -> f64 {
         self.sampler.average_frame_rate()
     }
@@ -67,5 +60,17 @@ impl<S: FrameRateSampler> FrameCounter<S> {
 
     pub fn tick(&mut self, time: &GameTime) {
         self.sampler.tick(time);
+    }
+}
+
+impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
+    fn target_frame_rate(&self) -> f64 {
+        self.target_frame_rate
+    }
+    fn target_time_per_frame(&self) -> FloatDuration {
+        FloatDuration::seconds(1.0) / self.target_frame_rate
+    }
+    fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration {
+        self.target_time_per_frame() - time.elapsed_time_since_frame_start()
     }
 }
