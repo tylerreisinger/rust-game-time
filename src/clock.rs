@@ -21,6 +21,22 @@ pub struct GameTime {
     frame_number: u64,
 }
 
+/// Time-tracking for use in real-time simulations.
+///
+/// `GameClock` provides time tracking for simulations. It
+/// tracks total time the simulation has run for as well as
+/// the elapsed time between individual frames.
+///
+/// In addition to tracking wall time, it tracks "game time"
+/// which is the time used by the simulation itself. This game time
+/// can be coupled directly to wall time, or can be changed by a fixed
+/// time step per frame.
+///
+/// `GameClock` uses [`GameTime`](./struct.GameTime.html) objects
+/// to report the time at each frame to the program. The [`tick`](./fn.tick.html)
+/// tells `GameClock` when a new frame is started, and returns
+/// the `GameTime` object for that frame. This object can then be passed
+/// to the rest of the simulation independently of `GameClock`.
 #[derive(Debug, Clone)]
 pub struct GameClock {
     last_frame_time: GameTime,
@@ -32,6 +48,8 @@ pub struct GameClock {
 }
 
 impl GameClock {
+    /// Construct a new `GameClock` object, initialized to start at
+    /// zero game time and a wall time of `chrono::Local::now()`.
     pub fn new() -> GameClock {
         let now = chrono::Local::now();
         let start_game_time = GameTime {
@@ -52,32 +70,50 @@ impl GameClock {
         }
     }
 
-    pub fn current_frame_index(&self) -> u64 {
+    /// Return the current frame number.
+    ///
+    /// The frame number starts at `0` for "before the first frame"
+    /// and increases by 1 every time `tick` is called.
+    pub fn current_frame_number(&self) -> u64 {
         self.current_frame
     }
+    /// Return the wall time when the `GameClock` was created.
     pub fn start_wall_time(&self) -> chrono::DateTime<chrono::Local> {
         self.start_wall_time
     }
+    /// Return the wall time at the start of the current frame.
+    ///
+    /// This is equivalent to the value returned by
+    /// `last_frame_time().frame_wall_time()`
     pub fn frame_wall_time(&self) -> chrono::DateTime<chrono::Local> {
         self.last_frame_time.frame_wall_time
     }
+
+    /// Return the amount of wall time elapsed since the start of the current frame.
     pub fn frame_elapsed_time(&self) -> FloatDuration {
         chrono::Local::now()
             .float_duration_since(self.frame_wall_time())
             .unwrap()
     }
+    /// Return the [`GameTime`](./struct.GameTime.html) for the current frame.
     pub fn last_frame_time(&self) -> &GameTime {
         &self.last_frame_time
     }
-
+    /// Return the rate at which game time is increasing.
     pub fn clock_multiplier(&self) -> f64 {
         self.clock_multiplier
     }
+    /// Set the rate at which game time is increasing.
     pub fn with_clock_multiplier(&mut self, val: f64) -> &mut GameClock {
         self.clock_multiplier = val;
         self
     }
 
+    /// Mark the start of a new frame, updating time statistics.
+    ///
+    /// The `GameTime` for the new frame is returned. This gives the time
+    /// statistics for the entirety of the current frame. It is cached and
+    /// can be later obtained by calling `last_frame_time`.
     pub fn tick<C>(&mut self, counter: &mut C) -> GameTime
         where C: FrameCount + ?Sized
     {
@@ -109,6 +145,7 @@ impl GameClock {
         time
     }
 
+    /// Map from wall time elapsed to game time elapsed.
     fn elapsed_game_time_from_wall_time<C>(&self,
                                            counter: &mut C,
                                            elapsed_wall_time: FloatDuration)
@@ -121,6 +158,17 @@ impl GameClock {
         }
     }
 
+    /// Put the current thread to sleep if necessary in order to maintain the target frame rate.
+    ///
+    /// If the current frame has taken more time than the target frame rate allows, then the
+    /// thread will not sleep. Otherwise it will sleep for
+    /// `counter.target_time_per_frame() - self.frame_elapsed_time()`
+    ///
+    /// This method relies on the passed function `f` to actually perform the sleep.
+    /// `f` receives the amount of sleep time requested and it is up to itself to
+    /// sleep for that amount of time. If you don't care how the sleep is performed,
+    /// use the [`sleep_remaining`](./struct.GameClock.html#method.sleep_remaining)
+    /// method instead.
     pub fn sleep_remaining_via<C, F>(&mut self, counter: &C, f: F)
         where C: FrameCount + ?Sized,
               F: FnOnce(FloatDuration)
@@ -129,9 +177,21 @@ impl GameClock {
                              chrono::Local::now()
                                  .float_duration_since(self.frame_wall_time())
                                  .unwrap();
-        f(remaining_time)
+        if !remaining_time.is_negative() {
+            f(remaining_time)
+        }
     }
 
+    /// Put the current thread to sleep if necessary in order to maintain the target frame rate.
+    ///
+    /// If the current frame has taken more time than the target frame rate allows, then the
+    /// thread will not sleep. Otherwise it will sleep for
+    /// `counter.target_time_per_frame() - self.frame_elapsed_time()`
+    ///
+    /// This method uses [`std::thread::sleep`](https://doc.rust-lang.org/std/thread/fn.sleep.html)
+    /// to put the thread to sleep. If a different sleep function is desired, use
+    /// the [`sleep_remaining_via`](./struct.GameClock.html#method.sleep_remaining_via)
+    /// method instead.
     pub fn sleep_remaining<C>(&mut self, counter: &C)
         where C: FrameCount + ?Sized
     {
