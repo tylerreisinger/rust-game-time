@@ -33,4 +33,12 @@ impl<C> FrameRunner<C>
         let time = self.clock.tick(&mut self.counter);
         time
     }
+
+    pub fn do_frame<F>(&mut self, frame_fn: F)
+        where F: FnOnce(GameTime)
+    {
+        let time = self.tick();
+        frame_fn(time);
+        self.clock.sleep_remaining(&self.counter);
+    }
 }
