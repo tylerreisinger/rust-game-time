@@ -7,4 +7,7 @@ pub mod error;
 pub mod framerate;
 pub mod runner;
 
-pub use self::time::*;
+pub use self::clock::{GameTime, GameClock, TimeProgression};
+pub use self::error::DurationError;
+pub use self::framerate::{FrameCounter, FrameCount, FrameRateSampler};
+pub use self::runner::FrameRunner;
