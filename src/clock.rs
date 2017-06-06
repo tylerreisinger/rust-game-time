@@ -146,6 +146,21 @@ impl Default for GameClock {
 }
 
 impl GameTime {
+    pub fn new(frame_wall_time: chrono::DateTime<chrono::Local>,
+               frame_game_time: time::Duration,
+               elapsed_game_time: FloatDuration,
+               elapsed_wall_time: FloatDuration,
+               frame_number: u64)
+               -> GameTime {
+        GameTime {
+            frame_wall_time,
+            frame_game_time,
+            elapsed_game_time,
+            elapsed_wall_time,
+            frame_number,
+        }
+    }
+
     pub fn frame_game_time(&self) -> time::Duration {
         self.frame_game_time
     }
