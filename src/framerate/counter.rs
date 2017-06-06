@@ -11,6 +11,8 @@ pub trait FrameCount: Debug {
     fn target_time_per_frame(&self) -> FloatDuration;
     fn remaining_frame_time(&self, time: &GameTime) -> FloatDuration;
     fn tick(&mut self, time: &GameTime);
+    fn average_frame_rate(&self) -> f64;
+    fn is_running_slow(&self, time: &GameTime) -> bool;
 }
 
 #[derive(Debug, Clone)]
@@ -40,18 +42,6 @@ impl<S: FrameRateSampler> FrameCounter<S> {
         self.target_frame_rate = val;
         self
     }
-
-    pub fn average_frame_rate(&self) -> f64 {
-        self.sampler.average_frame_rate()
-    }
-    pub fn last_frame_rate(&self, time: &GameTime) -> f64 {
-        1.0 / time.elapsed_game_time().as_seconds()
-    }
-    pub fn is_running_slow(&self, time: &GameTime) -> bool {
-        let ratio = self.target_time_per_frame().as_seconds() /
-                    time.elapsed_wall_time().as_seconds();
-        ratio <= self.slow_threshold
-    }
     pub fn is_saturated(&self) -> bool {
         self.sampler.is_saturated()
     }
@@ -72,5 +62,13 @@ impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
     }
     fn tick(&mut self, time: &GameTime) {
         self.sampler.tick(time);
+    }
+    fn average_frame_rate(&self) -> f64 {
+        self.sampler.average_frame_rate()
+    }
+    fn is_running_slow(&self, time: &GameTime) -> bool {
+        let ratio = self.target_time_per_frame().as_seconds() /
+                    time.elapsed_wall_time().as_seconds();
+        ratio <= self.slow_threshold
     }
 }

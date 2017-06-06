@@ -4,7 +4,7 @@ use std::time;
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
 
-use framerate::{FrameCounter, FrameRateSampler, FrameCount};
+use framerate::FrameCount;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeProgression {
@@ -165,5 +165,8 @@ impl GameTime {
     }
     pub fn frame_number(&self) -> u64 {
         self.frame_number
+    }
+    pub fn instantaneous_frame_rate(&self) -> f64 {
+        1.0 / self.elapsed_game_time.as_seconds()
     }
 }
