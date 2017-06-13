@@ -1,3 +1,9 @@
+//! Types for counting and recording time in a simulation.
+//!
+//! `clock` is the primary module for time tracking in `game_time`. It
+//! provides two primary types: `GameClock`, a "clock" for tracking frames
+//! and time progression within the simulation and `GameTime`, a specific
+//! point in time within the simulation.
 use std::thread;
 use std::time;
 
