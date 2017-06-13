@@ -12,6 +12,12 @@ pub enum TimeProgression {
     VariableStep,
 }
 
+/// A specific point of time in a simulation.
+///
+/// `GameTime` knows both the wall time and game time of the simulation at a
+/// fixed time. A `GameTime` object is usually created by calling
+/// [`tick`](./struct.GameClock.html#method.tick) on a [`GameClock`](./struct.GameClock.html)
+/// object.
 #[derive(Debug, Clone)]
 pub struct GameTime {
     frame_wall_time: chrono::DateTime<chrono::Local>,
@@ -206,6 +212,10 @@ impl Default for GameClock {
 }
 
 impl GameTime {
+    /// Construct a `GameTime` object directly.
+    ///
+    /// This is useful primarily for writing tests or for constructing a
+    /// `GameTime` without using a `GameClock`.
     pub fn new(frame_wall_time: chrono::DateTime<chrono::Local>,
                frame_game_time: time::Duration,
                elapsed_game_time: FloatDuration,
@@ -221,26 +231,45 @@ impl GameTime {
         }
     }
 
+    /// The game time at the time of creation of this `GameTime` object.
     pub fn frame_game_time(&self) -> time::Duration {
         self.frame_game_time
     }
+    /// The wall time at the time of creation of this `GameTime` object.
     pub fn frame_wall_time(&self) -> chrono::DateTime<chrono::Local> {
         self.frame_wall_time
     }
+    /// The amount of game time that passed since the previous frame.
     pub fn elapsed_game_time(&self) -> FloatDuration {
         self.elapsed_game_time
     }
+    /// The amount of wall time that passed since the previous frame.
     pub fn elapsed_wall_time(&self) -> FloatDuration {
         self.elapsed_wall_time
     }
+    /// The amount of elapsed wall time since the start of the current frame.
+    ///
+    /// This value is computed from the current instant when called, based
+    /// on the frame start time. This can be used for intra-frame profiling.
     pub fn elapsed_time_since_frame_start(&self) -> FloatDuration {
         chrono::Local::now()
             .float_duration_since(self.frame_wall_time)
             .unwrap()
     }
+    /// The index of the current frame.
+    ///
+    /// This value increases by 1 for each frame created, and represents the total
+    /// number of frames executed in the simulation.
     pub fn frame_number(&self) -> u64 {
         self.frame_number
     }
+    /// Return the instantaneous frame rate between the last and current frames.
+    ///
+    /// The "instantaneous" frame rate is computed from the last frame's elapsed
+    /// time, and takes no previous frames into account.
+    ///
+    /// For a more stable frame rate, use a [`FrameCount`](../framerate/counter/trait.FrameCount.html)
+    /// object.
     pub fn instantaneous_frame_rate(&self) -> f64 {
         1.0 / self.elapsed_game_time.as_seconds()
     }
