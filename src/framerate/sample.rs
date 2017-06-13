@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use clock::GameTime;
 
 /// The default number of samples for frame rate samplers.
-pub const DEFAULT_NUM_SAMPLES: u32 = 128;
+pub const DEFAULT_NUM_SAMPLES: u32 = 64;
 
 /// Frame rate computation.
 ///
