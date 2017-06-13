@@ -1,3 +1,4 @@
+//! Utilities for frame rate computation and management.
 pub mod counter;
 pub mod sample;
 
