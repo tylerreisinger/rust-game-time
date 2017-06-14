@@ -2,7 +2,7 @@
 use clock::{GameTime, GameClock};
 
 use framerate::counter::FrameCount;
-use time_progression::TimeProgression;
+use progression::TimeProgression;
 
 /// A helper type for running frame simulations with a frame counter.
 ///

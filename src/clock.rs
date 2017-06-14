@@ -9,7 +9,7 @@ use std::time;
 
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
-use time_progression::TimeProgression;
+use progression::TimeProgression;
 
 use framerate::FrameCount;
 
