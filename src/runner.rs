@@ -1,6 +1,8 @@
 //! Implements the [`FrameRunner`](./runner/struct.FrameRunner.html) struct for managing frame simulations.
 use clock::{GameTime, GameClock};
+
 use framerate::counter::FrameCount;
+use time_progression::TimeProgression;
 
 /// A helper type for running frame simulations with a frame counter.
 ///
@@ -10,19 +12,22 @@ use framerate::counter::FrameCount;
 /// a `tick` method like `GameClock`, and updates both the `GameClock` and
 /// `FrameCount` objects contained.
 #[derive(Debug)]
-pub struct FrameRunner<C: FrameCount> {
+pub struct FrameRunner<C: FrameCount, T: TimeProgression> {
     clock: GameClock,
     counter: C,
+    time_progress: T,
 }
 
-impl<C> FrameRunner<C>
-    where C: FrameCount
+impl<C, T> FrameRunner<C, T>
+    where C: FrameCount,
+          T: TimeProgression
 {
     /// Construct a new `FrameRunner` from a `GameClock` and a `FrameCount`.
-    pub fn new(clock: GameClock, counter: C) -> FrameRunner<C> {
+    pub fn new(clock: GameClock, counter: C, time_progress: T) -> FrameRunner<C, T> {
         FrameRunner {
-            clock: clock,
-            counter: counter,
+            clock,
+            counter,
+            time_progress,
         }
     }
 
@@ -47,7 +52,7 @@ impl<C> FrameRunner<C>
     /// The `GameTime` for the new frame is returned, with the same properties as that
     /// returned from [`GameClock::tick`](../clock/struct.GameClock.html#method.tick).
     pub fn tick(&mut self) -> GameTime {
-        let time = self.clock.tick(&mut self.counter);
+        let time = self.clock.tick(&mut self.time_progress);
         time
     }
 

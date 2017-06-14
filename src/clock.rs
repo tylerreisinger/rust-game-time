@@ -9,14 +9,9 @@ use std::time;
 
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
+use time_progression::TimeProgression;
 
 use framerate::FrameCount;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TimeProgression {
-    FixedStep,
-    VariableStep,
-}
 
 /// A specific point of time in a simulation.
 ///
@@ -56,7 +51,6 @@ pub struct GameClock {
     total_game_time: time::Duration,
     current_frame: u64,
     clock_multiplier: f64,
-    time_progression: TimeProgression,
 }
 
 impl GameClock {
@@ -78,7 +72,6 @@ impl GameClock {
             total_game_time: time::Duration::new(0, 0),
             current_frame: 0,
             clock_multiplier: 1.0,
-            time_progression: TimeProgression::VariableStep,
         }
     }
 
@@ -126,8 +119,8 @@ impl GameClock {
     /// The `GameTime` for the new frame is returned. This gives the time
     /// statistics for the entirety of the current frame. It is cached and
     /// can be later obtained by calling `last_frame_time`.
-    pub fn tick<C>(&mut self, counter: &mut C) -> GameTime
-        where C: FrameCount + ?Sized
+    pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
+        where T: TimeProgression + ?Sized
     {
         let frame_start = chrono::Local::now();
 
@@ -137,7 +130,8 @@ impl GameClock {
             .float_duration_since(self.frame_wall_time())
             .unwrap();
 
-        let elapsed_game_time = self.elapsed_game_time_from_wall_time(counter, elapsed_wall_time);
+        let elapsed_game_time = time_progress.compute_game_time(&elapsed_wall_time) *
+                                self.clock_multiplier;
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
         self.total_game_time = total_game_time;
@@ -152,22 +146,7 @@ impl GameClock {
 
         self.last_frame_time = time.clone();
 
-        counter.tick(&time);
-
         time
-    }
-
-    /// Map from wall time elapsed to game time elapsed.
-    fn elapsed_game_time_from_wall_time<C>(&self,
-                                           counter: &mut C,
-                                           elapsed_wall_time: FloatDuration)
-                                           -> FloatDuration
-        where C: FrameCount + ?Sized
-    {
-        match self.time_progression {
-            TimeProgression::FixedStep => counter.target_time_per_frame() * self.clock_multiplier, 
-            TimeProgression::VariableStep => elapsed_wall_time * self.clock_multiplier, 
-        }
     }
 
     /// Put the current thread to sleep if necessary in order to maintain the target frame rate.
@@ -186,9 +165,7 @@ impl GameClock {
               F: FnOnce(FloatDuration)
     {
         let remaining_time = counter.target_time_per_frame() -
-                             chrono::Local::now()
-                                 .float_duration_since(self.frame_wall_time())
-                                 .unwrap();
+                             self.last_frame_time.elapsed_time_since_frame_start();
         if !remaining_time.is_negative() {
             f(remaining_time)
         }
