@@ -2,7 +2,7 @@
 use clock::{GameTime, GameClock};
 
 use framerate::counter::FrameCount;
-use progression::TimeProgression;
+use step::TimeStep;
 
 /// A helper type for running frame simulations with a frame counter.
 ///
@@ -12,7 +12,7 @@ use progression::TimeProgression;
 /// a `tick` method like `GameClock`, and updates both the `GameClock` and
 /// `FrameCount` objects contained.
 #[derive(Debug)]
-pub struct FrameRunner<C: FrameCount, T: TimeProgression> {
+pub struct FrameRunner<C: FrameCount, T: TimeStep> {
     clock: GameClock,
     counter: C,
     time_progress: T,
@@ -20,7 +20,7 @@ pub struct FrameRunner<C: FrameCount, T: TimeProgression> {
 
 impl<C, T> FrameRunner<C, T>
     where C: FrameCount,
-          T: TimeProgression
+          T: TimeStep
 {
     /// Construct a new `FrameRunner` from a `GameClock` and a `FrameCount`.
     pub fn new(clock: GameClock, counter: C, time_progress: T) -> FrameRunner<C, T> {

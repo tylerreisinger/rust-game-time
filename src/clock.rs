@@ -9,7 +9,7 @@ use std::time;
 
 use chrono;
 use float_duration::{FloatDuration, TimePoint};
-use progression::TimeProgression;
+use step::TimeStep;
 
 use framerate::FrameCount;
 
@@ -120,7 +120,7 @@ impl GameClock {
     /// statistics for the entirety of the current frame. It is cached and
     /// can be later obtained by calling `last_frame_time`.
     pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
-        where T: TimeProgression + ?Sized
+        where T: TimeStep + ?Sized
     {
         let frame_start = chrono::Local::now();
 
