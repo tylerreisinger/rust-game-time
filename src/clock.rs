@@ -55,6 +55,20 @@ pub struct GameClock {
     clock_multiplier: f64,
 }
 
+/// A [`GameClock`](./struct.GameClock.html) builder,
+/// allowing for customization of the initial time and parameters.
+///
+/// `GameClockBuilder` offers fine control over the initial state of a `GameClock`. For
+/// most cases, using [`GameClock::new()`](./struct.GameClock.html#method.new) is good enough.
+/// However, it can be useful to have more control in some situations, especially testing.
+#[derive(Debug, Clone)]
+pub struct GameClockBuilder {
+    start_game_time: time::Duration,
+    start_wall_time: chrono::DateTime<chrono::Local>,
+    start_frame: u64,
+    clock_multiplier: f64,
+}
+
 impl GameClock {
     /// Construct a new `GameClock` object, initialized to start at
     /// zero game time and a wall time of `chrono::Local::now()`.
@@ -259,9 +273,80 @@ impl GameTime {
     /// The "instantaneous" frame rate is computed from the last frame's elapsed
     /// time, and takes no previous frames into account.
     ///
-    /// For a more stable frame rate, use a [`FrameCount`](../framerate/counter/trait.FrameCount.html)
-    /// object.
+    /// For a more stable frame rate, use a
+    /// [`FrameCount`](../framerate/counter/trait.FrameCount.html) object.
     pub fn instantaneous_frame_rate(&self) -> f64 {
         1.0 / self.elapsed_game_time.as_seconds()
+    }
+}
+
+impl GameClockBuilder {
+    /// Construct a new `GameClockBuilder` with default values.
+    ///
+    /// Calling `build` on the returned object returns immediately gives the same
+    /// result as `GameClock::new()`.
+    pub fn new() -> GameClockBuilder {
+        GameClockBuilder {
+            start_game_time: time::Duration::new(0, 0),
+            start_wall_time: chrono::Local::now(),
+            start_frame: 0,
+            clock_multiplier: 1.0,
+        }
+    }
+
+    /// Set the initial game time when the game is started.
+    ///
+    /// Defaults to zero.
+    pub fn start_game_time(&mut self, time: time::Duration) -> &mut GameClockBuilder {
+        self.start_game_time = time;
+        self
+    }
+    /// Set the initial wall time when the game is started.
+    ///
+    /// Defaults to `chrono::Local::now()`.
+    pub fn start_wall_time(
+        &mut self,
+        time: chrono::DateTime<chrono::Local>,
+    ) -> &mut GameClockBuilder {
+        self.start_wall_time = time;
+        self
+    }
+    /// Set the initial frame number.
+    ///
+    /// Defaults to `0`.
+    pub fn start_frame(&mut self, frame_num: u64) -> &mut GameClockBuilder {
+        self.start_frame = frame_num;
+        self
+    }
+    /// Set the initial clock multiplier.
+    ///
+    /// Defaults to `1.0`.
+    pub fn clock_multiplier(&mut self, multiplier: f64) -> &mut GameClockBuilder {
+        self.clock_multiplier = multiplier;
+        self
+    }
+    /// Construct a `GameClock` object with the set parameters.
+    pub fn build(&self) -> GameClock {
+        let start_game_time = GameTime {
+            frame_wall_time: self.start_wall_time,
+            frame_game_time: self.start_game_time,
+            elapsed_game_time: FloatDuration::zero(),
+            elapsed_wall_time: FloatDuration::zero(),
+            frame_number: self.start_frame,
+        };
+
+        GameClock {
+            last_frame_time: start_game_time,
+            start_wall_time: self.start_wall_time,
+            total_game_time: time::Duration::new(0, 0),
+            current_frame: self.start_frame,
+            clock_multiplier: self.clock_multiplier,
+        }
+    }
+}
+
+impl Default for GameClockBuilder {
+    fn default() -> GameClockBuilder {
+        GameClockBuilder::new()
     }
 }
