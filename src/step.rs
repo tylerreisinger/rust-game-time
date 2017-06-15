@@ -3,9 +3,9 @@ use float_duration::FloatDuration;
 use framerate::FrameCount;
 
 /// Compute elapsed game time for a frame.
-pub trait TimeProgression {
-    /// Compute the game time.
-    fn compute_game_time(&mut self, wall_time: &FloatDuration) -> FloatDuration;
+pub trait TimeStep {
+    /// Compute the time step for the next frame.
+    fn time_step(&mut self, wall_time: &FloatDuration) -> FloatDuration;
 }
 
 /// A time step based on elapsed wall time.
@@ -41,22 +41,26 @@ impl ConstantStep {
     pub fn new(step: FloatDuration) -> ConstantStep {
         ConstantStep { step }
     }
+    /// Construct a new `ConstantStep` that does not advance game time.
+    pub fn null_step() -> ConstantStep {
+        ConstantStep::new(FloatDuration::zero())
+    }
 }
 
-impl TimeProgression for VariableStep {
-    fn compute_game_time(&mut self, wall_time: &FloatDuration) -> FloatDuration {
+impl TimeStep for VariableStep {
+    fn time_step(&mut self, wall_time: &FloatDuration) -> FloatDuration {
         *wall_time
     }
 }
-impl<'a, C> TimeProgression for FixedStep<'a, C>
+impl<'a, C> TimeStep for FixedStep<'a, C>
     where C: 'a + FrameCount + ?Sized
 {
-    fn compute_game_time(&mut self, _: &FloatDuration) -> FloatDuration {
+    fn time_step(&mut self, _: &FloatDuration) -> FloatDuration {
         self.counter.target_time_per_frame()
     }
 }
-impl TimeProgression for ConstantStep {
-    fn compute_game_time(&mut self, _: &FloatDuration) -> FloatDuration {
+impl TimeStep for ConstantStep {
+    fn time_step(&mut self, _: &FloatDuration) -> FloatDuration {
         self.step.clone()
     }
 }

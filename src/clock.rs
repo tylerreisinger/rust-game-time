@@ -35,9 +35,11 @@ pub struct GameTime {
 /// the elapsed time between individual frames.
 ///
 /// In addition to tracking wall time, it tracks "game time"
-/// which is the time used by the simulation itself. This game time
-/// can be coupled directly to wall time, or can be changed by a fixed
-/// time step per frame.
+/// which is the time used by the simulation itself. This game time is updated
+/// each frame and
+/// can be coupled directly to wall time [`VariableStep`](../step/struct.VariableStep.html)
+/// or can be updated by a fixed amount (see the [`step`](../step/index.html) module for more
+/// options).
 ///
 /// `GameClock` uses [`GameTime`](./struct.GameTime.html) objects
 /// to report the time at each frame to the program. The [`tick`](./fn.tick.html)
@@ -109,7 +111,7 @@ impl GameClock {
         self.clock_multiplier
     }
     /// Set the rate at which game time is increasing.
-    pub fn with_clock_multiplier(&mut self, val: f64) -> &mut GameClock {
+    pub fn set_clock_multiplier(&mut self, val: f64) -> &mut GameClock {
         self.clock_multiplier = val;
         self
     }
@@ -119,6 +121,9 @@ impl GameClock {
     /// The `GameTime` for the new frame is returned. This gives the time
     /// statistics for the entirety of the current frame. It is cached and
     /// can be later obtained by calling `last_frame_time`.
+    /// 
+    /// `time_progress` is a [`TimeStep`](../step/trait.TimeStep.html) reference used to
+    /// compute the elapsed game time for the frame..
     pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
         where T: TimeStep + ?Sized
     {
@@ -130,7 +135,7 @@ impl GameClock {
             .float_duration_since(self.frame_wall_time())
             .unwrap();
 
-        let elapsed_game_time = time_progress.compute_game_time(&elapsed_wall_time) *
+        let elapsed_game_time = time_progress.time_step(&elapsed_wall_time) *
                                 self.clock_multiplier;
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
