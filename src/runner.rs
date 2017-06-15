@@ -19,8 +19,9 @@ pub struct FrameRunner<C: FrameCount, T: TimeStep> {
 }
 
 impl<C, T> FrameRunner<C, T>
-    where C: FrameCount,
-          T: TimeStep
+where
+    C: FrameCount,
+    T: TimeStep,
 {
     /// Construct a new `FrameRunner` from a `GameClock` and a `FrameCount`.
     pub fn new(clock: GameClock, counter: C, time_progress: T) -> FrameRunner<C, T> {
@@ -63,7 +64,8 @@ impl<C, T> FrameRunner<C, T>
     /// [`GameClock::sleep_remaining`](../clock/struct.GameClock.html#method.sleep_remaining)
     /// after the closure has ended.
     pub fn do_frame<F>(&mut self, frame_fn: F)
-        where F: FnOnce(GameTime)
+    where
+        F: FnOnce(GameTime),
     {
         let time = self.tick();
         frame_fn(time);

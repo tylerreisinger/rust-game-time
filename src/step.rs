@@ -29,7 +29,8 @@ impl VariableStep {
     }
 }
 impl<'a, C> FixedStep<'a, C>
-    where C: 'a + FrameCount + ?Sized
+where
+    C: 'a + FrameCount + ?Sized,
 {
     /// Construct a new `FixedStep` object based on the set frame rate in `counter`.
     pub fn new(counter: &'a mut C) -> FixedStep<'a, C> {
@@ -53,7 +54,8 @@ impl TimeStep for VariableStep {
     }
 }
 impl<'a, C> TimeStep for FixedStep<'a, C>
-    where C: 'a + FrameCount + ?Sized
+where
+    C: 'a + FrameCount + ?Sized,
 {
     fn time_step(&mut self, _: &FloatDuration) -> FloatDuration {
         self.counter.target_time_per_frame()

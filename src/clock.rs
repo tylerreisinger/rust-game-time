@@ -121,11 +121,12 @@ impl GameClock {
     /// The `GameTime` for the new frame is returned. This gives the time
     /// statistics for the entirety of the current frame. It is cached and
     /// can be later obtained by calling `last_frame_time`.
-    /// 
+    ///
     /// `time_progress` is a [`TimeStep`](../step/trait.TimeStep.html) reference used to
     /// compute the elapsed game time for the frame..
     pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
-        where T: TimeStep + ?Sized
+    where
+        T: TimeStep + ?Sized,
     {
         let frame_start = chrono::Local::now();
 
@@ -135,8 +136,7 @@ impl GameClock {
             .float_duration_since(self.frame_wall_time())
             .unwrap();
 
-        let elapsed_game_time = time_progress.time_step(&elapsed_wall_time) *
-                                self.clock_multiplier;
+        let elapsed_game_time = time_progress.time_step(&elapsed_wall_time) * self.clock_multiplier;
         let total_game_time = self.total_game_time + elapsed_game_time.to_std().unwrap();
 
         self.total_game_time = total_game_time;
@@ -166,11 +166,12 @@ impl GameClock {
     /// use the [`sleep_remaining`](./struct.GameClock.html#method.sleep_remaining)
     /// method instead.
     pub fn sleep_remaining_via<C, F>(&mut self, counter: &C, f: F)
-        where C: FrameCount + ?Sized,
-              F: FnOnce(FloatDuration)
+    where
+        C: FrameCount + ?Sized,
+        F: FnOnce(FloatDuration),
     {
         let remaining_time = counter.target_time_per_frame() -
-                             self.last_frame_time.elapsed_time_since_frame_start();
+            self.last_frame_time.elapsed_time_since_frame_start();
         if !remaining_time.is_negative() {
             f(remaining_time)
         }
@@ -187,7 +188,8 @@ impl GameClock {
     /// the [`sleep_remaining_via`](./struct.GameClock.html#method.sleep_remaining_via)
     /// method instead.
     pub fn sleep_remaining<C>(&mut self, counter: &C)
-        where C: FrameCount + ?Sized
+    where
+        C: FrameCount + ?Sized,
     {
         self.sleep_remaining_via(counter, |rem| thread::sleep(rem.to_std().unwrap()))
     }
@@ -204,12 +206,13 @@ impl GameTime {
     ///
     /// This is useful primarily for writing tests or for constructing a
     /// `GameTime` without using a `GameClock`.
-    pub fn new(frame_wall_time: chrono::DateTime<chrono::Local>,
-               frame_game_time: time::Duration,
-               elapsed_game_time: FloatDuration,
-               elapsed_wall_time: FloatDuration,
-               frame_number: u64)
-               -> GameTime {
+    pub fn new(
+        frame_wall_time: chrono::DateTime<chrono::Local>,
+        frame_game_time: time::Duration,
+        elapsed_game_time: FloatDuration,
+        elapsed_wall_time: FloatDuration,
+        frame_number: u64,
+    ) -> GameTime {
         GameTime {
             frame_wall_time,
             frame_game_time,

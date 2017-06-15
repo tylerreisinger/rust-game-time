@@ -92,7 +92,7 @@ impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
     }
     fn is_running_slow(&self, time: &GameTime) -> bool {
         let ratio = self.target_time_per_frame().as_seconds() /
-                    time.elapsed_wall_time().as_seconds();
+            time.elapsed_wall_time().as_seconds();
         ratio <= self.slow_threshold
     }
 }

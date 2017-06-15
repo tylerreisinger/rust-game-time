@@ -64,7 +64,7 @@ impl FrameRateSampler for RunningAverageSampler {
 
         let effective_fps = 1.0 / time.elapsed_game_time().as_seconds();
         let new_average = ((self.current_average * (num_samples - 1) as f64) + effective_fps) /
-                          (num_samples as f64);
+            (num_samples as f64);
 
         self.current_average = new_average;
     }
