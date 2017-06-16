@@ -350,3 +350,99 @@ impl Default for GameClockBuilder {
         GameClockBuilder::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Local;
+    use step;
+
+    #[test]
+    fn test_clock_construct() {
+        let clock = GameClock::new();
+        assert_eq!(clock.clock_multiplier(), 1.0);
+        assert_eq!(
+            clock.last_frame_time().elapsed_game_time(),
+            FloatDuration::zero()
+        );
+
+        let clock2 = GameClockBuilder::new()
+            .clock_multiplier(5.0)
+            .start_frame(100)
+            .build();
+
+        assert_eq!(clock2.current_frame_number(), 100);
+        assert_eq!(clock2.clock_multiplier(), 5.0);
+        assert_eq!(
+            clock2.last_frame_time().elapsed_game_time(),
+            FloatDuration::zero()
+        );
+        assert_eq!(
+            clock2.last_frame_time().elapsed_wall_time(),
+            FloatDuration::zero()
+        );
+        assert!(clock2.last_frame_time().frame_wall_time() <= Local::now());
+
+        let start_time = Local::today().and_hms(12, 0, 0);
+        let clock3 = GameClockBuilder::new()
+            .start_game_time(time::Duration::new(100, 0))
+            .start_wall_time(start_time)
+            .build();
+
+        assert_eq!(clock3.current_frame_number(), 0);
+        assert_eq!(
+            clock3.last_frame_time().frame_game_time(),
+            time::Duration::new(100, 0)
+        );
+        assert_eq!(clock3.last_frame_time().frame_wall_time(), start_time);
+
+        assert_eq!(GameClock::default().current_frame_number(), 0);
+        assert_eq!(
+            GameClock::default().last_frame_time().frame_game_time(),
+            time::Duration::new(0, 0)
+        );
+    }
+
+    #[test]
+    fn test_clock_tick() {
+        let mut clock = GameClock::new();
+        let time = clock.tick(&mut step::ConstantStep::new(FloatDuration::seconds(1.0)));
+        assert_eq!(time.frame_number(), 1);
+        assert_eq!(time.frame_game_time(), time::Duration::new(1, 0));
+        assert!(time.frame_wall_time() > clock.start_wall_time());
+        assert!(time.frame_wall_time() < Local::now());
+        assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0));
+        assert!(time.elapsed_wall_time() < FloatDuration::seconds(1.0));
+
+        let time2 = clock.tick(&mut step::VariableStep::new());
+        assert_eq!(time2.frame_number(), 2);
+        assert!(time2.frame_wall_time() > time.frame_wall_time());
+        assert_eq!(time2.elapsed_game_time(), time2.elapsed_wall_time());
+        assert!(time2.frame_game_time() > time.frame_game_time());
+    }
+
+    #[test]
+    fn test_clock_tick_loop() {
+        let dt = FloatDuration::milliseconds(50.0);
+        let mut step = step::ConstantStep::new(dt);
+        let mut clock = GameClock::default();
+
+        for x in 0..10 {
+            let frame_time = clock.tick(&mut step);
+
+            assert_eq!(frame_time.frame_number(), x + 1);
+            assert_eq!(frame_time.elapsed_game_time(), dt);
+            assert_eq!(
+                frame_time.frame_game_time(),
+                time::Duration::new(0, (50000000 * (x + 1)) as u32)
+            );
+        }
+
+        let frame_time = clock.last_frame_time();
+        assert_eq!(
+            FloatDuration::from_std(frame_time.frame_game_time()),
+            FloatDuration::seconds(0.5)
+        );
+        assert!(frame_time.frame_wall_time() > clock.start_wall_time());
+    }
+}
