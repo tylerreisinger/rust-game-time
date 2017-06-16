@@ -216,26 +216,6 @@ impl Default for GameClock {
 }
 
 impl GameTime {
-    /// Construct a `GameTime` object directly.
-    ///
-    /// This is useful primarily for writing tests or for constructing a
-    /// `GameTime` without using a `GameClock`.
-    pub fn new(
-        frame_wall_time: chrono::DateTime<chrono::Local>,
-        frame_game_time: time::Duration,
-        elapsed_game_time: FloatDuration,
-        elapsed_wall_time: FloatDuration,
-        frame_number: u64,
-    ) -> GameTime {
-        GameTime {
-            frame_wall_time,
-            frame_game_time,
-            elapsed_game_time,
-            elapsed_wall_time,
-            frame_number,
-        }
-    }
-
     /// The game time at the time of creation of this `GameTime` object.
     pub fn frame_game_time(&self) -> time::Duration {
         self.frame_game_time
