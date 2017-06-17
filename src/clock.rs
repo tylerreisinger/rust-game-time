@@ -138,12 +138,31 @@ impl GameClock {
     ///
     /// `time_progress` is a [`TimeStep`](../step/trait.TimeStep.html) reference used to
     /// compute the elapsed game time for the frame..
+    ///
+    /// The wall time for the start of the frame is computed via `chrono::Local::now()` at
+    /// the start of the function. In order to override this to use a different clock
+    /// or for debugging purposes, see
+    /// [`tick_with_wall_time`](./struct.GameClock.html#methods.tick_with_wall_time).
     pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
     where
         T: TimeStep + ?Sized,
     {
         let frame_start = chrono::Local::now();
+        self.tick_with_wall_time(time_progress, frame_start)
+    }
 
+    /// Mark the start of a new frame with a specified wall time, updating time statistics.
+    ///
+    /// This function is like `tick` but allows for the start time for the
+    /// frame to be specified.
+    pub fn tick_with_wall_time<T>(
+        &mut self,
+        time_progress: &mut T,
+        frame_start: chrono::DateTime<chrono::Local>,
+    ) -> GameTime
+    where
+        T: TimeStep + ?Sized,
+    {
         self.current_frame += 1;
 
         let elapsed_wall_time = frame_start
