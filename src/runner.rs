@@ -1,6 +1,7 @@
 //! Implements the [`FrameRunner`](./runner/struct.FrameRunner.html) struct for managing frame simulations.
-use clock::{GameTime, GameClock};
+use chrono;
 
+use clock::{GameTime, GameClock};
 use framerate::counter::FrameCount;
 use step::TimeStep;
 
@@ -55,6 +56,20 @@ where
     pub fn tick(&mut self) -> GameTime {
         let time = self.clock.tick(&mut self.time_progress);
         time
+    }
+
+    /// Mark the start of a new frame with a specified wall time, updating time statistics.
+    ///
+    /// This function is like `tick` but allows for the start time for the
+    /// frame to be specified.
+    pub fn tick_with_wall_time(
+        &mut self,
+        frame_start: chrono::DateTime<chrono::Local>,
+    ) -> GameTime {
+        self.clock.tick_with_wall_time(
+            &mut self.time_progress,
+            frame_start,
+        )
     }
 
     /// Perform one frame of the simulation using `frame_fn`.
