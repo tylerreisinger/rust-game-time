@@ -26,7 +26,7 @@ pub trait FrameRateSampler: Debug {
 /// `RunningAverageSampler` computes the average value by computing `(avg*(N-1) + next) / N`.
 /// This method does not require caching past frames, but is sensitive to large outliers
 /// influencing the value for many frames.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RunningAverageSampler {
     max_samples: u32,
     current_samples: u32,
@@ -34,7 +34,7 @@ pub struct RunningAverageSampler {
 }
 
 /// A frame rate sampler that computes the average frame rate of a number of past frames.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct LinearAverageSampler {
     past_data: VecDeque<f64>,
 }

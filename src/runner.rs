@@ -54,8 +54,7 @@ where
     /// The `GameTime` for the new frame is returned, with the same properties as that
     /// returned from [`GameClock::tick`](../clock/struct.GameClock.html#method.tick).
     pub fn tick(&mut self) -> GameTime {
-        let time = self.clock.tick(&self.time_progress);
-        time
+        self.clock.tick(&self.time_progress)
     }
 
     /// Mark the start of a new frame with a specified wall time, updating time statistics.

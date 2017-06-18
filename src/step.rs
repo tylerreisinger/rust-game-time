@@ -63,6 +63,6 @@ where
 }
 impl TimeStep for ConstantStep {
     fn time_step(&self, _: &FloatDuration) -> FloatDuration {
-        self.step.clone()
+        self.step
     }
 }
