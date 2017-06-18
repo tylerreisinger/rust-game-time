@@ -5,7 +5,7 @@ use framerate::FrameCount;
 /// Compute elapsed game time for a frame.
 pub trait TimeStep {
     /// Compute the time step for the next frame.
-    fn time_step(&mut self, wall_time: &FloatDuration) -> FloatDuration;
+    fn time_step(&self, wall_time: &FloatDuration) -> FloatDuration;
 }
 
 /// A time step based on elapsed wall time.
@@ -49,7 +49,7 @@ impl ConstantStep {
 }
 
 impl TimeStep for VariableStep {
-    fn time_step(&mut self, wall_time: &FloatDuration) -> FloatDuration {
+    fn time_step(&self, wall_time: &FloatDuration) -> FloatDuration {
         *wall_time
     }
 }
@@ -57,12 +57,12 @@ impl<'a, C> TimeStep for FixedStep<'a, C>
 where
     C: 'a + FrameCount + ?Sized,
 {
-    fn time_step(&mut self, _: &FloatDuration) -> FloatDuration {
+    fn time_step(&self, _: &FloatDuration) -> FloatDuration {
         self.counter.target_time_per_frame()
     }
 }
 impl TimeStep for ConstantStep {
-    fn time_step(&mut self, _: &FloatDuration) -> FloatDuration {
+    fn time_step(&self, _: &FloatDuration) -> FloatDuration {
         self.step.clone()
     }
 }

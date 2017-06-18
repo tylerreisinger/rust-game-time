@@ -143,7 +143,7 @@ impl GameClock {
     /// the start of the function. In order to override this to use a different clock
     /// or for debugging purposes, see
     /// [`tick_with_wall_time`](./struct.GameClock.html#methods.tick_with_wall_time).
-    pub fn tick<T>(&mut self, time_progress: &mut T) -> GameTime
+    pub fn tick<T>(&mut self, time_progress: &T) -> GameTime
     where
         T: TimeStep + ?Sized,
     {
@@ -157,7 +157,7 @@ impl GameClock {
     /// frame to be specified.
     pub fn tick_with_wall_time<T>(
         &mut self,
-        time_progress: &mut T,
+        time_progress: &T,
         frame_start: chrono::DateTime<chrono::Local>,
     ) -> GameTime
     where
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     fn test_clock_tick() {
         let mut clock = GameClock::new();
-        let time = clock.tick(&mut step::ConstantStep::new(FloatDuration::seconds(1.0)));
+        let time = clock.tick(&step::ConstantStep::new(FloatDuration::seconds(1.0)));
         assert_eq!(time.frame_number(), 1);
         assert_eq!(time.frame_game_time(), time::Duration::new(1, 0));
         assert!(time.frame_wall_time() > clock.start_wall_time());
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0));
         assert!(time.elapsed_wall_time() < FloatDuration::seconds(1.0));
 
-        let time2 = clock.tick(&mut step::VariableStep::new());
+        let time2 = clock.tick(&step::VariableStep::new());
         assert_eq!(time2.frame_number(), 2);
         assert!(time2.frame_wall_time() > time.frame_wall_time());
         assert_eq!(time2.elapsed_game_time(), time2.elapsed_wall_time());
@@ -426,11 +426,11 @@ mod tests {
     #[test]
     fn test_clock_tick_loop() {
         let dt = FloatDuration::milliseconds(50.0);
-        let mut step = step::ConstantStep::new(dt);
+        let step = step::ConstantStep::new(dt);
         let mut clock = GameClock::default().clone();
 
         for x in 0..10 {
-            let frame_time = clock.tick(&mut step);
+            let frame_time = clock.tick(&step);
 
             assert_eq!(frame_time.frame_number(), x + 1);
             assert_eq!(frame_time.elapsed_game_time(), dt);
@@ -454,13 +454,13 @@ mod tests {
         clock.set_clock_multiplier(2.0);
         assert_eq!(clock.clock_multiplier(), 2.0);
 
-        let mut step = step::VariableStep::new();
+        let step = step::VariableStep::new();
         let start_time = clock.start_wall_time();
         let wall_dt = chrono::Duration::seconds(1);
 
         for x in 0..10 {
             let time = start_time + wall_dt * (x + 1);
-            let frame_time = clock.tick_with_wall_time(&mut step, time);
+            let frame_time = clock.tick_with_wall_time(&step, time);
 
             assert_eq!(
                 2.0 * frame_time.elapsed_wall_time(),
