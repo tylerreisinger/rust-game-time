@@ -383,9 +383,10 @@ mod tests {
         assert!(clock2.last_frame_time().frame_wall_time() <= Local::now());
 
         let start_time = Local::today().and_hms(12, 0, 0);
-        let clock3 = GameClockBuilder::new()
+        let clock3 = GameClockBuilder::default()
             .start_game_time(time::Duration::new(100, 0))
             .start_wall_time(start_time)
+            .clone()
             .build();
 
         assert_eq!(clock3.current_frame_number(), 0);
@@ -418,13 +419,15 @@ mod tests {
         assert!(time2.frame_wall_time() > time.frame_wall_time());
         assert_eq!(time2.elapsed_game_time(), time2.elapsed_wall_time());
         assert!(time2.frame_game_time() > time.frame_game_time());
+        assert!(time2.elapsed_time_since_frame_start() > FloatDuration::seconds(0.0));
+        assert!(time2.elapsed_time_since_frame_start() < FloatDuration::seconds(0.01));
     }
 
     #[test]
     fn test_clock_tick_loop() {
         let dt = FloatDuration::milliseconds(50.0);
         let mut step = step::ConstantStep::new(dt);
-        let mut clock = GameClock::default();
+        let mut clock = GameClock::default().clone();
 
         for x in 0..10 {
             let frame_time = clock.tick(&mut step);
@@ -443,5 +446,31 @@ mod tests {
             FloatDuration::seconds(0.5)
         );
         assert!(frame_time.frame_wall_time() > clock.start_wall_time());
+    }
+
+    #[test]
+    fn test_wall_time() {
+        let mut clock = GameClock::new();
+        clock.set_clock_multiplier(2.0);
+        assert_eq!(clock.clock_multiplier(), 2.0);
+
+        let mut step = step::VariableStep::new();
+        let start_time = clock.start_wall_time();
+        let wall_dt = chrono::Duration::seconds(1);
+
+        for x in 0..10 {
+            let time = start_time + wall_dt * (x + 1);
+            let frame_time = clock.tick_with_wall_time(&mut step, time);
+
+            assert_eq!(
+                2.0 * frame_time.elapsed_wall_time(),
+                frame_time.elapsed_game_time()
+            );
+            assert_eq!(
+                frame_time.elapsed_wall_time(),
+                FloatDuration::from_chrono(wall_dt)
+            );
+            assert_eq!(frame_time.instantaneous_frame_rate(), 0.5);
+        }
     }
 }
