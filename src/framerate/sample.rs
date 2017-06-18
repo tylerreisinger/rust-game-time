@@ -37,6 +37,7 @@ pub struct RunningAverageSampler {
 #[derive(Debug, Clone, Default)]
 pub struct LinearAverageSampler {
     past_data: VecDeque<f64>,
+    max_samples: u32,
 }
 
 impl RunningAverageSampler {
@@ -62,7 +63,7 @@ impl FrameRateSampler for RunningAverageSampler {
         }
         let num_samples = self.current_samples;
 
-        let effective_fps = 1.0 / time.elapsed_game_time().as_seconds();
+        let effective_fps = 1.0 / time.elapsed_wall_time().as_seconds();
         let new_average = ((self.current_average * (num_samples - 1) as f64) + effective_fps) /
             (num_samples as f64);
 
@@ -83,13 +84,16 @@ impl LinearAverageSampler {
     }
     /// Construct a new LinearAverageSampler` with a specified sample size.
     pub fn with_max_samples(max_samples: u32) -> LinearAverageSampler {
-        LinearAverageSampler { past_data: VecDeque::with_capacity(max_samples as usize) }
+        LinearAverageSampler {
+            past_data: VecDeque::with_capacity(max_samples as usize),
+            max_samples,
+        }
     }
 }
 
 impl FrameRateSampler for LinearAverageSampler {
     fn tick(&mut self, time: &GameTime) {
-        let effective_fps = 1.0 / time.elapsed_game_time().as_seconds();
+        let effective_fps = 1.0 / time.elapsed_wall_time().as_seconds();
 
         if self.is_saturated() {
             self.past_data.pop_front();
@@ -102,6 +106,65 @@ impl FrameRateSampler for LinearAverageSampler {
         sum / (self.past_data.len() as f64)
     }
     fn is_saturated(&self) -> bool {
-        self.past_data.len() == self.past_data.capacity()
+        self.past_data.len() == (self.max_samples as usize)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clock::GameClock;
+    use framerate::counter::{self, FrameCount};
+    use step;
+
+    use float_duration::FloatDuration;
+    use chrono;
+
+    #[test]
+    fn test_linear_sampler() {
+        let mut clock = GameClock::default();
+        let step = step::ConstantStep::new(FloatDuration::seconds(0.05));
+        let sampler = LinearAverageSampler::with_max_samples(10);
+        let mut count = counter::FrameCounter::new(20.0, sampler);
+        let start_time = clock.start_wall_time();
+        let dt = chrono::Duration::milliseconds(100);
+
+        for i in 0..10 {
+            assert!(!count.is_saturated());
+            let frame_time = start_time + dt * (i + 1);
+            let time = clock.tick_with_wall_time(&step, frame_time);
+            count.tick(&time);
+
+            assert_eq!(count.average_frame_rate(), 10.0);
+            assert_eq!(count.target_frame_rate(), 20.0);
+        }
+        assert!(count.is_saturated());
+        let time = clock.tick_with_wall_time(&step, start_time + dt * 11);
+        count.tick(&time);
+        assert!(count.is_saturated());
+    }
+
+    #[test]
+    fn test_running_avg_sampler() {
+        let mut clock = GameClock::default();
+        let step = step::ConstantStep::new(FloatDuration::seconds(0.05));
+        let sampler = RunningAverageSampler::with_max_samples(10);
+        let mut count = counter::FrameCounter::new(20.0, sampler);
+        let start_time = clock.start_wall_time();
+        let dt = chrono::Duration::milliseconds(100);
+
+        for i in 0..10 {
+            assert!(!count.is_saturated());
+            let frame_time = start_time + dt * (i + 1);
+            let time = clock.tick_with_wall_time(&step, frame_time);
+            count.tick(&time);
+
+            assert_eq!(count.average_frame_rate(), 10.0);
+            assert_eq!(count.target_frame_rate(), 20.0);
+        }
+        assert!(count.is_saturated());
+        let time = clock.tick_with_wall_time(&step, start_time + dt * 11);
+        count.tick(&time);
+        assert!(count.is_saturated());
     }
 }
