@@ -92,4 +92,21 @@ mod tests {
         let time = clock.last_frame_time();
         assert_eq!(time.frame_game_time(), time::Duration::new(1, 0));
     }
+
+    #[test]
+    fn test_null_step() {
+        let mut clock = GameClock::new();
+        let step = ConstantStep::null_step();
+
+        for _ in 0..1000 {
+            let time = clock.tick(&step);
+            assert_eq!(time.elapsed_game_time(), FloatDuration::zero());
+        }
+
+        assert_eq!(
+            clock.last_frame_time().frame_game_time(),
+            time::Duration::new(0, 0)
+        );
+
+    }
 }

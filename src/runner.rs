@@ -83,3 +83,35 @@ where
         self.clock.sleep_remaining(&self.counter);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use framerate::{counter, sample};
+    use step;
+
+    use float_duration::FloatDuration;
+    use std::time;
+
+    #[test]
+    fn test_runner() {
+        let clock = GameClock::new();
+        let count =
+            counter::FrameCounter::new(20.0, sample::RunningAverageSampler::with_max_samples(20));
+
+        let mut runner = FrameRunner::new(clock, count);
+
+        for i in 0..10 {
+            runner.do_frame(
+                &step::ConstantStep::new(FloatDuration::milliseconds(25.0)),
+                |time| {
+                    assert_eq!(time.elapsed_game_time(), FloatDuration::milliseconds(25.0));
+                    assert_eq!(
+                        time.frame_game_time(),
+                        time::Duration::new(0, 25000000) * (i + 1)
+                    );
+                },
+            );
+        }
+    }
+}
