@@ -48,7 +48,9 @@ where
     /// The `GameTime` for the new frame is returned, with the same properties as that
     /// returned from [`GameClock::tick`](../clock/struct.GameClock.html#method.tick).
     pub fn tick<T: TimeStep>(&mut self, time_step: &T) -> GameTime {
-        self.clock.tick(time_step)
+        let time = self.clock.tick(time_step);
+        self.counter.tick(&time);
+        time
     }
 
     /// Mark the start of a new frame with a specified wall time, updating time statistics.
@@ -60,7 +62,9 @@ where
         time_step: &T,
         frame_start: chrono::DateTime<chrono::Local>,
     ) -> GameTime {
-        self.clock.tick_with_wall_time(time_step, frame_start)
+        let time = self.clock.tick_with_wall_time(time_step, frame_start);
+        self.counter.tick(&time);
+        time
     }
 
     /// Perform one frame of the simulation using `frame_fn`.
