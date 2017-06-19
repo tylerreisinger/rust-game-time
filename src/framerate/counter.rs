@@ -96,3 +96,20 @@ impl<S: FrameRateSampler> FrameCount for FrameCounter<S> {
         ratio <= self.slow_threshold
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use framerate::sample;
+
+    #[test]
+    fn test_construction() {
+        let sampler = sample::LinearAverageSampler::new();
+        let mut counter = FrameCounter::new(30.0, sampler);
+        assert_eq!(counter.target_frame_rate(), 30.0);
+        counter.set_target_frame_rate(5.0);
+        assert_eq!(counter.target_frame_rate(), 5.0);
+        assert_eq!(counter.slow_threshold(), DEFAULT_SLOW_THRESHOLD);
+    }
+}

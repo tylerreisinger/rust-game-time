@@ -19,6 +19,8 @@ pub trait FrameRateSampler: Debug {
     fn average_frame_rate(&self) -> f64;
     /// Return true if the number of samples fills the cache.
     fn is_saturated(&self) -> bool;
+    /// Return the number of samples to average over.
+    fn max_samples(&self) -> u32;
 }
 
 /// A frame rate sampler that computes a moving average from past frames without caching data.
@@ -26,7 +28,7 @@ pub trait FrameRateSampler: Debug {
 /// `RunningAverageSampler` computes the average value by computing `(avg*(N-1) + next) / N`.
 /// This method does not require caching past frames, but is sensitive to large outliers
 /// influencing the value for many frames.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct RunningAverageSampler {
     max_samples: u32,
     current_samples: u32,
@@ -34,7 +36,7 @@ pub struct RunningAverageSampler {
 }
 
 /// A frame rate sampler that computes the average frame rate of a number of past frames.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct LinearAverageSampler {
     past_data: VecDeque<f64>,
     max_samples: u32,
@@ -49,7 +51,7 @@ impl RunningAverageSampler {
     /// Construct a `RunningAverageSampler` with a specified sample size.
     pub fn with_max_samples(max_samples: u32) -> RunningAverageSampler {
         RunningAverageSampler {
-            max_samples,
+            max_samples: max_samples,
             current_samples: 0,
             current_average: 0.0,
         }
@@ -74,6 +76,15 @@ impl FrameRateSampler for RunningAverageSampler {
     }
     fn is_saturated(&self) -> bool {
         self.current_samples == self.max_samples
+    }
+    fn max_samples(&self) -> u32 {
+        self.max_samples
+    }
+}
+
+impl Default for RunningAverageSampler {
+    fn default() -> RunningAverageSampler {
+        RunningAverageSampler::new()
     }
 }
 
@@ -108,6 +119,15 @@ impl FrameRateSampler for LinearAverageSampler {
     fn is_saturated(&self) -> bool {
         self.past_data.len() == (self.max_samples as usize)
     }
+    fn max_samples(&self) -> u32 {
+        self.max_samples
+    }
+}
+
+impl Default for LinearAverageSampler {
+    fn default() -> LinearAverageSampler {
+        LinearAverageSampler::new()
+    }
 }
 
 #[cfg(test)]
@@ -131,17 +151,22 @@ mod tests {
 
         for i in 0..10 {
             assert!(!count.is_saturated());
+            assert!(!count.sampler().is_saturated());
             let frame_time = start_time + dt * (i + 1);
             let time = clock.tick_with_wall_time(&step, frame_time);
             count.tick(&time);
 
             assert_eq!(count.average_frame_rate(), 10.0);
             assert_eq!(count.target_frame_rate(), 20.0);
+            assert!(count.is_running_slow(&time));
         }
         assert!(count.is_saturated());
         let time = clock.tick_with_wall_time(&step, start_time + dt * 11);
         count.tick(&time);
         assert!(count.is_saturated());
+
+        let sampler2 = LinearAverageSampler::default().clone();
+        assert_eq!(sampler2.max_samples(), DEFAULT_NUM_SAMPLES);
     }
 
     #[test]
@@ -155,16 +180,21 @@ mod tests {
 
         for i in 0..10 {
             assert!(!count.is_saturated());
+            assert!(!count.sampler().is_saturated());
             let frame_time = start_time + dt * (i + 1);
             let time = clock.tick_with_wall_time(&step, frame_time);
             count.tick(&time);
 
             assert_eq!(count.average_frame_rate(), 10.0);
             assert_eq!(count.target_frame_rate(), 20.0);
+            assert!(count.is_running_slow(&time));
         }
         assert!(count.is_saturated());
         let time = clock.tick_with_wall_time(&step, start_time + dt * 11);
         count.tick(&time);
         assert!(count.is_saturated());
+
+        let sampler2 = RunningAverageSampler::default().clone();
+        assert_eq!(sampler2.max_samples(), DEFAULT_NUM_SAMPLES);
     }
 }
