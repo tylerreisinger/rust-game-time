@@ -13,24 +13,18 @@ use step::TimeStep;
 /// a `tick` method like `GameClock`, and updates both the `GameClock` and
 /// `FrameCount` objects contained.
 #[derive(Debug)]
-pub struct FrameRunner<C: FrameCount, T: TimeStep> {
+pub struct FrameRunner<C: FrameCount> {
     clock: GameClock,
     counter: C,
-    time_progress: T,
 }
 
-impl<C, T> FrameRunner<C, T>
+impl<C> FrameRunner<C>
 where
     C: FrameCount,
-    T: TimeStep,
 {
     /// Construct a new `FrameRunner` from a `GameClock` and a `FrameCount`.
-    pub fn new(clock: GameClock, counter: C, time_progress: T) -> FrameRunner<C, T> {
-        FrameRunner {
-            clock,
-            counter,
-            time_progress,
-        }
+    pub fn new(clock: GameClock, counter: C) -> FrameRunner<C> {
+        FrameRunner { clock, counter }
     }
 
     /// Get a reference to the contained `GameClock`.
@@ -53,22 +47,20 @@ where
     ///
     /// The `GameTime` for the new frame is returned, with the same properties as that
     /// returned from [`GameClock::tick`](../clock/struct.GameClock.html#method.tick).
-    pub fn tick(&mut self) -> GameTime {
-        self.clock.tick(&self.time_progress)
+    pub fn tick<T: TimeStep>(&mut self, time_step: &T) -> GameTime {
+        self.clock.tick(time_step)
     }
 
     /// Mark the start of a new frame with a specified wall time, updating time statistics.
     ///
     /// This function is like `tick` but allows for the start time for the
     /// frame to be specified.
-    pub fn tick_with_wall_time(
+    pub fn tick_with_wall_time<T: TimeStep>(
         &mut self,
+        time_step: &T,
         frame_start: chrono::DateTime<chrono::Local>,
     ) -> GameTime {
-        self.clock.tick_with_wall_time(
-            &self.time_progress,
-            frame_start,
-        )
+        self.clock.tick_with_wall_time(time_step, frame_start)
     }
 
     /// Perform one frame of the simulation using `frame_fn`.
@@ -77,11 +69,12 @@ where
     /// and will call
     /// [`GameClock::sleep_remaining`](../clock/struct.GameClock.html#method.sleep_remaining)
     /// after the closure has ended.
-    pub fn do_frame<F>(&mut self, frame_fn: F)
+    pub fn do_frame<T, F>(&mut self, time_step: &T, frame_fn: F)
     where
+        T: TimeStep,
         F: FnOnce(GameTime),
     {
-        let time = self.tick();
+        let time = self.tick(time_step);
         frame_fn(time);
         self.clock.sleep_remaining(&self.counter);
     }

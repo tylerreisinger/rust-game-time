@@ -14,7 +14,7 @@ pub struct VariableStep {}
 /// A fixed time step derived from a set frame rate.
 #[derive(Debug)]
 pub struct FixedStep<'a, C: 'a + FrameCount + ?Sized> {
-    counter: &'a mut C,
+    counter: &'a C,
 }
 /// A specific, constant time step.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -33,7 +33,7 @@ where
     C: 'a + FrameCount + ?Sized,
 {
     /// Construct a new `FixedStep` object based on the set frame rate in `counter`.
-    pub fn new(counter: &'a mut C) -> FixedStep<'a, C> {
+    pub fn new(counter: &'a C) -> FixedStep<'a, C> {
         FixedStep { counter: counter }
     }
 }
@@ -64,5 +64,32 @@ where
 impl TimeStep for ConstantStep {
     fn time_step(&self, _: &FloatDuration) -> FloatDuration {
         self.step
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clock::GameClock;
+    use framerate::{counter, sample};
+
+    use std::time;
+
+    #[test]
+    fn test_fixed_step() {
+        let mut clock = GameClock::new();
+        let mut count =
+            counter::FrameCounter::new(20.0, sample::RunningAverageSampler::with_max_samples(20));
+
+        for _ in 0..20 {
+            let time = {
+                let step = FixedStep::new(&count);
+                clock.tick(&step)
+            };
+            count.tick(&time);
+            assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0 / 20.0));
+        }
+        let time = clock.last_frame_time();
+        assert_eq!(time.frame_game_time(), time::Duration::new(1, 0));
     }
 }
