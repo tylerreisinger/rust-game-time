@@ -107,7 +107,7 @@ mod tests {
                 |time| {
                     assert_eq!(time.elapsed_game_time(), FloatDuration::milliseconds(25.0));
                     assert_eq!(
-                        time.frame_game_time(),
+                        time.total_game_time(),
                         time::Duration::new(0, 25000000) * (i + 1)
                     );
                 },

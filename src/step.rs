@@ -90,7 +90,7 @@ mod tests {
             assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0 / 20.0));
         }
         let time = clock.last_frame_time();
-        assert_eq!(time.frame_game_time(), time::Duration::new(1, 0));
+        assert_eq!(time.total_game_time(), time::Duration::new(1, 0));
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
         }
 
         assert_eq!(
-            clock.last_frame_time().frame_game_time(),
+            clock.last_frame_time().total_game_time(),
             time::Duration::new(0, 0)
         );
 
