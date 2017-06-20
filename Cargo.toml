@@ -2,18 +2,20 @@
 name = "game_time"
 version = "0.1.0"
 authors = ["Tyler Reisinger <reisinger.tyler@gmail.com>"]
-keywords = ["game", "gamedev", "engine", "time", "fps", "fps_counter"]
+keywords = ["game", "engine", "time", "fps"]
+categories = ["date-and-time", "game-engines"]
 description = """
 A library for handling time in games.
 
-Game_time provides methods to easily track frame time in games. It allows
-easily speeding up or down the simulation, tracking and setting frame rate and
-determining various execution statistics.
+Game_time provides methods to track frame time in games. It allows
+decoupling game time from wall time as well as tracking and setting frame rate.
 """
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tylerreisinger/rust-game-time.git"
-homepage = "https://github.com/tylerreisinger/rust-game-time"
+
+[badges]
+travis-ci = { repository = "tylerreisinger/rust-game-time" }
 
 [lib]
 name = "game_time"
@@ -22,4 +24,4 @@ path = "src/lib.rs"
 [dependencies]
 chrono = "0.3.1"
 time = "0.1.37"
-float_duration = "0.3.0"
+float_duration = "0.3.2"
