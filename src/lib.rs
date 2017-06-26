@@ -48,7 +48,7 @@
 //! let mut sim_time = clock.last_frame_time().clone();
 //! let step = step::ConstantStep::new(FloatDuration::milliseconds(50.0));
 //!
-//! while FloatDuration::from(sim_time.total_game_time()) < end_time {
+//! while sim_time.total_game_time() < end_time {
 //!     sim_time = clock.tick(&step);
 //!     println!("Frame #{} at time={:?}", sim_time.frame_number(), sim_time.total_game_time());
 //! }
@@ -66,7 +66,7 @@
 //! let end_time = FloatDuration::seconds(10.0);
 //! let mut sim_time = clock.last_frame_time().clone();
 //!
-//! while FloatDuration::from(sim_time.total_game_time()) < end_time {
+//! while sim_time.total_game_time() < end_time {
 //!     sim_time = clock.tick(&step::FixedStep::new(&counter));
 //!     counter.tick(&sim_time);
 //!     println!("Frame #{} at time={:?}", sim_time.frame_number(), sim_time.total_game_time());
