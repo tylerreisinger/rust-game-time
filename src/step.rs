@@ -73,8 +73,6 @@ mod tests {
     use clock::GameClock;
     use framerate::{counter, sample};
 
-    use std::time;
-
     #[test]
     fn test_fixed_step() {
         let mut clock = GameClock::new();
@@ -90,7 +88,7 @@ mod tests {
             assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0 / 20.0));
         }
         let time = clock.last_frame_time();
-        assert_eq!(time.total_game_time(), time::Duration::new(1, 0));
+        assert_eq!(time.total_game_time(), FloatDuration::seconds(1.0));
     }
 
     #[test]
@@ -105,7 +103,7 @@ mod tests {
 
         assert_eq!(
             clock.last_frame_time().total_game_time(),
-            time::Duration::new(0, 0)
+            FloatDuration::zero()
         );
 
     }

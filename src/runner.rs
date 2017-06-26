@@ -91,7 +91,6 @@ mod tests {
     use step;
 
     use float_duration::FloatDuration;
-    use std::time;
 
     #[test]
     fn test_runner() {
@@ -106,9 +105,10 @@ mod tests {
                 &step::ConstantStep::new(FloatDuration::milliseconds(25.0)),
                 |time| {
                     assert_eq!(time.elapsed_game_time(), FloatDuration::milliseconds(25.0));
-                    assert_eq!(
+                    relative_eq!(
                         time.total_game_time(),
-                        time::Duration::new(0, 25000000) * (i + 1)
+                        FloatDuration::milliseconds(25.0) * (i + 1) as f64,
+                        epsilon = 1e-8
                     );
                 },
             );

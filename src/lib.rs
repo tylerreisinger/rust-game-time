@@ -76,6 +76,9 @@
 extern crate chrono;
 extern crate time;
 extern crate float_duration;
+#[cfg(test)]
+#[macro_use]
+extern crate approx;
 
 pub mod clock;
 pub mod framerate;

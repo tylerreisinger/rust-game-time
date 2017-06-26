@@ -22,8 +22,8 @@ use framerate::FrameCount;
 #[derive(Debug, Clone)]
 pub struct GameTime {
     frame_start_time: chrono::DateTime<chrono::Local>,
-    total_wall_time: time::Duration,
-    total_game_time: time::Duration,
+    total_wall_time: FloatDuration,
+    total_game_time: FloatDuration,
     elapsed_game_time: FloatDuration,
     elapsed_wall_time: FloatDuration,
     frame_number: u64,
@@ -77,8 +77,8 @@ impl GameClock {
         let now = chrono::Local::now();
         let start_game_time = GameTime {
             frame_start_time: now,
-            total_wall_time: time::Duration::new(0, 0),
-            total_game_time: time::Duration::new(0, 0),
+            total_wall_time: FloatDuration::zero(),
+            total_game_time: FloatDuration::zero(),
             elapsed_game_time: FloatDuration::zero(),
             elapsed_wall_time: FloatDuration::zero(),
             frame_number: 0,
@@ -108,12 +108,12 @@ impl GameClock {
     pub fn frame_start_time(&self) -> chrono::DateTime<chrono::Local> {
         self.last_frame_time().frame_start_time()
     }
-    /// Return the wall time at the start of the current frame.
+    /// Return the total elapsed wall time at the start of the current frame.
     ///
     /// This is equivalent to the value returned by
     /// `last_frame_time().total_wall_time()`
-    pub fn total_wall_time(&self) -> time::Duration {
-        self.last_frame_time.total_wall_time
+    pub fn total_wall_time(&self) -> FloatDuration {
+        self.last_frame_time().total_wall_time()
     }
 
     /// Return the amount of wall time elapsed since the start of the current frame.
@@ -182,11 +182,10 @@ impl GameClock {
 
         let time = GameTime {
             frame_start_time: frame_start,
-            total_wall_time: frame_start
-                .signed_duration_since(self.start_wall_time)
-                .to_std()
-                .unwrap(),
-            total_game_time: total_game_time,
+            total_wall_time: FloatDuration::from(
+                frame_start.signed_duration_since(self.start_wall_time),
+            ),
+            total_game_time: FloatDuration::from(total_game_time),
             elapsed_game_time,
             elapsed_wall_time,
             frame_number: self.current_frame,
@@ -246,11 +245,11 @@ impl Default for GameClock {
 
 impl GameTime {
     /// The game time at the time of creation of this `GameTime` object.
-    pub fn total_game_time(&self) -> time::Duration {
+    pub fn total_game_time(&self) -> FloatDuration {
         self.total_game_time
     }
     /// The wall time elapsed since the start of the simulation.
-    pub fn total_wall_time(&self) -> time::Duration {
+    pub fn total_wall_time(&self) -> FloatDuration {
         self.total_wall_time
     }
     /// The wall time at the time of creation of this `GameTime` object.
@@ -342,8 +341,8 @@ impl GameClockBuilder {
     pub fn build(&self) -> GameClock {
         let start_game_time = GameTime {
             frame_start_time: self.start_wall_time,
-            total_wall_time: time::Duration::new(0, 0),
-            total_game_time: self.start_game_time,
+            total_wall_time: FloatDuration::zero(),
+            total_game_time: FloatDuration::from(self.start_game_time),
             elapsed_game_time: FloatDuration::zero(),
             elapsed_wall_time: FloatDuration::zero(),
             frame_number: self.start_frame,
@@ -395,7 +394,7 @@ mod tests {
             clock2.last_frame_time().elapsed_wall_time(),
             FloatDuration::zero()
         );
-        assert!(clock2.last_frame_time().total_wall_time() == time::Duration::new(0, 0));
+        assert!(clock2.last_frame_time().total_wall_time() == FloatDuration::zero());
 
         let start_time = Local::today().and_hms(12, 0, 0);
         let clock3 = GameClockBuilder::default()
@@ -407,14 +406,14 @@ mod tests {
         assert_eq!(clock3.current_frame_number(), 0);
         assert_eq!(
             clock3.last_frame_time().total_game_time(),
-            time::Duration::new(100, 0)
+            FloatDuration::seconds(100.0)
         );
         assert_eq!(clock3.last_frame_time().frame_start_time(), start_time);
 
         assert_eq!(GameClock::default().current_frame_number(), 0);
         assert_eq!(
             GameClock::default().last_frame_time().total_game_time(),
-            time::Duration::new(0, 0)
+            FloatDuration::zero()
         );
     }
 
@@ -423,7 +422,7 @@ mod tests {
         let mut clock = GameClock::new();
         let time = clock.tick(&step::ConstantStep::new(FloatDuration::seconds(1.0)));
         assert_eq!(time.frame_number(), 1);
-        assert_eq!(time.total_game_time(), time::Duration::new(1, 0));
+        assert_eq!(time.total_game_time(), FloatDuration::seconds(1.0));
         assert!(time.frame_start_time() > clock.start_wall_time());
         assert!(time.frame_start_time() < Local::now());
         assert_eq!(time.elapsed_game_time(), FloatDuration::seconds(1.0));
@@ -449,17 +448,15 @@ mod tests {
 
             assert_eq!(frame_time.frame_number(), x + 1);
             assert_eq!(frame_time.elapsed_game_time(), dt);
-            assert_eq!(
+            relative_eq!(
                 frame_time.total_game_time(),
-                time::Duration::new(0, (50000000 * (x + 1)) as u32)
+                dt * (x + 1) as f64,
+                epsilon = 1e-8
             );
         }
 
         let frame_time = clock.last_frame_time();
-        assert_eq!(
-            FloatDuration::from_std(frame_time.total_game_time()),
-            FloatDuration::seconds(0.5)
-        );
+        assert_eq!(frame_time.total_game_time(), FloatDuration::seconds(0.5));
         assert!(frame_time.frame_start_time() > clock.start_wall_time());
     }
 
