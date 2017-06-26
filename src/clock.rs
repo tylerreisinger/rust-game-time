@@ -453,10 +453,12 @@ mod tests {
                 dt * (x + 1) as f64,
                 epsilon = 1e-8
             );
+            assert!(frame_time.elapsed_time_since_frame_start() > FloatDuration::zero());
         }
 
         let frame_time = clock.last_frame_time();
         assert_eq!(frame_time.total_game_time(), FloatDuration::seconds(0.5));
+        assert!(frame_time.elapsed_time_since_frame_start() < FloatDuration::milliseconds(1.0));
         assert!(frame_time.frame_start_time() > clock.start_wall_time());
     }
 
@@ -474,6 +476,10 @@ mod tests {
             let time = start_time + wall_dt * (x + 1);
             let frame_time = clock.tick_with_wall_time(&step, time);
 
+            assert_eq!(
+                frame_time.total_wall_time(),
+                time.float_duration_since(clock.start_wall_time()).unwrap()
+            );
             assert_eq!(
                 2.0 * frame_time.elapsed_wall_time(),
                 frame_time.elapsed_game_time()
