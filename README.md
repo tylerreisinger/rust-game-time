@@ -1,4 +1,4 @@
-[game_time](https://docs.rs/game_time) 0.1.0
+[game_time](https://docs.rs/game_time) 0.2.0
 ======================
 [![Build Status](https://travis-ci.org/tylerreisinger/rust-game-time.svg?branch=master)](https://travis-ci.org/tylerreisinger/rust-game-time)
 [![game_time on docs.rs][docsrs-image]][docsrs]
@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/tylerreisinger/rust-game-time/branch/master/graph/badge.svg)](https://codecov.io/gh/tylerreisinger/rust-game-time)
 
 [docsrs-image]: https://docs.rs/game_time/badge.svg
-[docsrs]: https://docs.rs/game_time/0.1.0/
+[docsrs]: https://docs.rs/game_time/0.2.0/
 [crates-image]: https://img.shields.io/crates/v/game_time.svg
 [crates]: https://crates.io/crates/game_time
 
@@ -25,7 +25,7 @@ Put this in your `Cargo.toml`:
 
 ```toml,ignore
 [dependencies]
-game_time = "0.1.0"
+game_time = "0.2.0"
 ```
 
 # Overview

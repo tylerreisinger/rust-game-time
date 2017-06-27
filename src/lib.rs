@@ -12,7 +12,7 @@
 //!
 //! ```toml,ignore
 //! [dependencies]
-//! game_time = "0.1.0"
+//! game_time = "0.2.0"
 //! ```
 //!
 //! # Overview
